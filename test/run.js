@@ -26,9 +26,10 @@ function finish(code) {
     process.exit(failures === 0 && code === 0 ? 0 : 1);
 }
 
-// Give the server a moment to bind the port, then run integration.
+// Give the server time to bind the port. CI runners (cold containers) need more
+// time than a warm local machine — 3 s covers Node 20 + mongoose init on GitHub Actions.
 setTimeout(function () {
     var r = spawnSync(node, [path.join(DIR, 'integration.test.js')], { stdio: 'inherit' });
     if (r.status !== 0) { failures++; }
     finish(0);
-}, 1200);
+}, 3000);
