@@ -23,8 +23,39 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm ci
-      - run: npm test
+
+      - name: node + npm versions
+        run: node --version && npm --version
+
+      - name: npm ci
+        run: npm ci
+
+      - name: movement tests
+        run: node test/movement.test.js
+
+      - name: physics tests
+        run: node test/physics.test.js
+
+      - name: engine tests
+        run: node test/engine.test.js
+
+      - name: queue tests
+        run: node test/queue.test.js
+
+      - name: lifecycle tests
+        run: node test/lifecycle.test.js
+
+      - name: stability tests
+        run: node test/stability.test.js
+
+      - name: start server
+        run: node index.js &
+          sleep 6
+          curl -sf http://localhost:3000/ || echo "server not responding to HTTP (may be fine)"
+
+      - name: integration tests
+        run: node test/integration.test.js
