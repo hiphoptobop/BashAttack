@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PvP Rankings — BashAttack</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; padding: 20px;
+            background: #14141a; color: #ddd;
+            font-family: system-ui, sans-serif;
+            min-height: 100vh;
+        }
+        h1 {
+            text-align: center; margin: 0 0 4px 0;
+            font-size: 26px; color: #fff;
+            letter-spacing: 1px;
+        }
+        .subtitle {
+            text-align: center; color: #888; font-size: 13px; margin-bottom: 24px;
+        }
+        .week-nav {
+            display: flex; justify-content: center; align-items: center;
+            gap: 16px; margin-bottom: 24px;
+        }
+        .week-nav button {
+            background: #2a2a38; color: #ddd; border: 1px solid #444;
+            padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 13px;
+        }
+        .week-nav button:hover { background: #3a3a50; }
+        .week-label { font-size: 15px; color: #aaa; min-width: 110px; text-align: center; }
+        .back-btn {
+            display: block; width: fit-content; margin: 0 auto 28px auto;
+            background: #3b82d4; color: #fff; border: none;
+            padding: 8px 20px; border-radius: 20px; cursor: pointer; font-size: 14px;
+            text-decoration: none;
+        }
+        .back-btn:hover { background: #2563b4; }
+        .tiers-grid {
+            display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;
+            max-width: 1100px; margin: 0 auto;
+        }
+        .tier-card {
+            background: #1e1e2a; border: 1px solid #333; border-radius: 8px;
+            width: 320px; overflow: hidden;
+        }
+        .tier-header {
+            background: #2a2a3e; padding: 10px 16px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .tier-header h2 { margin: 0; font-size: 15px; color: #e0c060; }
+        .tier-header span { font-size: 12px; color: #888; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        thead th {
+            padding: 8px 12px; text-align: left;
+            color: #888; font-weight: normal; font-size: 12px;
+            border-bottom: 1px solid #2a2a3a;
+        }
+        thead th.right { text-align: right; }
+        tbody tr:nth-child(even) { background: #1a1a26; }
+        tbody tr:hover { background: #252535; }
+        td { padding: 8px 12px; }
+        td.right { text-align: right; }
+        td.rank { color: #888; width: 28px; }
+        td.name { color: #fff; max-width: 110px;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        td.kd { color: #4ade80; font-weight: bold; }
+        .rank-gold   { color: #f0c040; font-weight: bold; }
+        .rank-silver { color: #b0b8c8; font-weight: bold; }
+        .rank-bronze { color: #c08050; font-weight: bold; }
+        .empty { color: #555; text-align: center; padding: 20px; font-size: 13px; }
+        .loading { text-align: center; color: #666; padding: 40px; font-size: 14px; }
+        .error-msg { text-align: center; color: #e05050; padding: 40px; font-size: 14px; }
+        .refresh-btn {
+            display: block; width: fit-content; margin: 24px auto 0 auto;
+            background: #2a2a38; color: #aaa; border: 1px solid #444;
+            padding: 6px 16px; border-radius: 4px; cursor: pointer; font-size: 12px;
+        }
+        .refresh-btn:hover { background: #3a3a50; }
+    </style>
+</head>
+<body>
+    <h1>⚔️ PvP Weekly Rankings</h1>
+    <p class="subtitle">Top players by K/D ratio · resets every Monday</p>
+
+    <button class="back-btn" onclick="window.close()">← Close & Return to Game</button>
+
+    <div class="week-nav">
+        <button id="prevWeek">◀ Prev</button>
+        <span class="week-label" id="weekLabel">Loading…</span>
+        <button id="nextWeek" id="nextWeek">Next ▶</button>
+    </div>
+
+    <div id="content" class="loading">Loading rankings…</div>
+
+    <button class="refresh-btn" id="refreshBtn">↻ Refresh</button>
+
+    <script>
+        var currentWeekKey = null;
+        var thisWeekKey = null;
+
+        // ISO week key from a Date — mirrors server logic
+        function getWeekKey(date) {
+            var d = date ? new Date(date) : new Date();
+            var day = d.getUTCDay() || 7;
+            d.setUTCDate(d.getUTCDate() + 4 - day);
+            var yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+            var week = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+            return d.getUTCFullYear() + '-' + String(week).padStart(2, '0');
+        }
+
+        // Shift a week key by +/- 1 week
+        function shiftWeek(key, delta) {
+            var parts = key.split('-');
+            var year = parseInt(parts[0]), week = parseInt(parts[1]);
+            // Convert ISO week to approximate date (Thursday of that week) then shift
+            var jan4 = new Date(Date.UTC(year, 0, 4));
+            var dayOfWeek = jan4.getUTCDay() || 7;
+            var weekStart = new Date(jan4);
+            weekStart.setUTCDate(jan4.getUTCDate() - (dayOfWeek - 1) + (week - 1) * 7);
+            weekStart.setUTCDate(weekStart.getUTCDate() + delta * 7);
+            return getWeekKey(weekStart);
+        }
+
+        function tierLabel(tier) {
+            var lo = (tier - 1) * 10 + 1;
+            var hi = tier * 10;
+            return 'Tier ' + tier + ' (Levels ' + lo + '–' + hi + ')';
+        }
+
+        function rankClass(i) {
+            if (i === 0) return 'rank-gold';
+            if (i === 1) return 'rank-silver';
+            if (i === 2) return 'rank-bronze';
+            return '';
+        }
+
+        function renderTier(tierData) {
+            var card = document.createElement('div');
+            card.className = 'tier-card';
+
+            var header = document.createElement('div');
+            header.className = 'tier-header';
+            header.innerHTML = '<h2>' + tierLabel(tierData.tier) + '</h2>' +
+                               '<span>' + tierData.entries.length + ' players</span>';
+            card.appendChild(header);
+
+            if (!tierData.entries.length) {
+                var empty = document.createElement('div');
+                empty.className = 'empty';
+                empty.textContent = 'No matches recorded this week';
+                card.appendChild(empty);
+                return card;
+            }
+
+            var table = document.createElement('table');
+            table.innerHTML = '<thead><tr>' +
+                '<th>#</th><th>Player</th>' +
+                '<th class="right">K</th><th class="right">D</th><th class="right">K/D</th>' +
+                '</tr></thead>';
+            var tbody = document.createElement('tbody');
+            tierData.entries.forEach(function(e, i) {
+                var tr = document.createElement('tr');
+                tr.innerHTML =
+                    '<td class="rank ' + rankClass(i) + '">' + (i + 1) + '</td>' +
+                    '<td class="name" title="' + e.username + '">' + e.username + '</td>' +
+                    '<td class="right">' + e.kills + '</td>' +
+                    '<td class="right">' + e.deaths + '</td>' +
+                    '<td class="right kd">' + e.kd.toFixed(2) + '</td>';
+                tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+            card.appendChild(table);
+            return card;
+        }
+
+        function load(weekKey) {
+            currentWeekKey = weekKey;
+            document.getElementById('weekLabel').textContent = 'Week ' + weekKey;
+            document.getElementById('nextWeek').disabled = (weekKey === thisWeekKey);
+
+            var content = document.getElementById('content');
+            content.className = 'loading';
+            content.textContent = 'Loading rankings…';
+            content.innerHTML = '';
+
+            fetch('/api/pvp/rankings?week=' + weekKey)
+                .then(function(r) {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.json();
+                })
+                .then(function(data) {
+                    content.className = 'tiers-grid';
+                    if (!data.tiers || !data.tiers.length) {
+                        content.className = '';
+                        content.innerHTML = '<p class="empty" style="text-align:center;color:#555;padding:40px">No PvP matches recorded for this week yet.</p>';
+                        return;
+                    }
+                    data.tiers.forEach(function(t) {
+                        content.appendChild(renderTier(t));
+                    });
+                })
+                .catch(function(err) {
+                    content.className = '';
+                    content.innerHTML = '<p class="error-msg">Failed to load rankings: ' + err.message + '</p>';
+                });
+        }
+
+        document.getElementById('prevWeek').addEventListener('click', function() {
+            load(shiftWeek(currentWeekKey, -1));
+        });
+        document.getElementById('nextWeek').addEventListener('click', function() {
+            if (currentWeekKey !== thisWeekKey) load(shiftWeek(currentWeekKey, 1));
+        });
+        document.getElementById('refreshBtn').addEventListener('click', function() {
+            load(currentWeekKey);
+        });
+
+        thisWeekKey = getWeekKey();
+        load(thisWeekKey);
+    </script>
+</body>
+</html>

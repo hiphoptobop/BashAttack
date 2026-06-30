@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Idle Clicker Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #222;
+            font-family: Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        #gameCanvas {
+            display: block;
+            background: #333;
+            margin: 0 auto;
+            border: 1px solid #000;
+            box-shadow: 0 0 24px rgba(0,0,0,0.35);
+        }
+        #controls {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 5px;
+            color: #fff;
+            width: 250px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        .section {
+            margin: 15px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+        .section h3 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+        .skill-btn {
+            background: #2196F3;
+        }
+        .skill-btn:hover {
+            background: #0b7dda;
+        }
+        #clickArea {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 200px;
+            height: 200px;
+            background: rgba(255, 0, 0, 0.3);
+            border: 3px solid #f00;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #fff;
+            font-weight: bold;
+            user-select: none;
+            text-align: center;
+            line-height: 1.2;
+        }
+        #clickArea:active {
+            transform: scale(0.95);
+        }
+        #helpButton {
+            position: absolute;
+            top: 10px;
+            right: 280px;
+            width: 40px;
+            height: 40px;
+            font-size: 24px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 1000;
+            font-weight: bold;
+        }
+        #helpButton:hover {
+            background: #45a049;
+        }
+        #rankingsButton {
+            position: absolute;
+            top: 60px;
+            right: 460px;
+            width: auto;
+            min-width: 150px;
+            height: 40px;
+            padding: 0 15px;
+            font-size: 14px;
+            background: linear-gradient(135deg, #7c5cd8 0%, #6344c0 100%);
+            color: white;
+            border: 2px solid #5b3fa8;
+            border-radius: 20px;
+            cursor: pointer;
+            z-index: 1000;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #rankingsButton:hover {
+            background: linear-gradient(135deg, #6344c0 0%, #4e35a8 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4);
+        }
+        #pvpButton {
+            position: absolute;
+            top: 60px;
+            right: 280px;
+            width: auto;
+            min-width: 160px;
+            height: 40px;
+            padding: 0 15px;
+            font-size: 14px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            color: white;
+            border: 2px solid #ff4757;
+            border-radius: 20px;
+            cursor: pointer;
+            z-index: 1000;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        #pvpButton:hover {
+            background: linear-gradient(135deg, #ff5252 0%, #e84a5f 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4);
+        }
+        #pvpButton:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .loading-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 30px 50px;
+            border-radius: 10px;
+            font-size: 18px;
+            z-index: 3000;
+            display: none;
+            text-align: center;
+        }
+        #helpModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            overflow-y: auto;
+        }
+        #helpModalContent {
+            background: white;
+            margin: 50px auto;
+            padding: 30px;
+            max-width: 800px;
+            border-radius: 10px;
+            position: relative;
+            color: #333;
+        }
+        #helpModalContent h1 {
+            margin-top: 0;
+            color: #4CAF50;
+        }
+        #helpModalContent h2 {
+            color: #2196F3;
+            margin-top: 20px;
+            border-bottom: 2px solid #2196F3;
+            padding-bottom: 5px;
+        }
+        #helpModalContent h3 {
+            color: #555;
+            margin-top: 15px;
+        }
+        #helpModalContent ul {
+            line-height: 1.6;
+        }
+        #helpModalContent li {
+            margin: 8px 0;
+        }
+        #helpModalContent strong {
+            color: #000;
+        }
+        .closeButton {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 32px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #666;
+            width: auto;
+            padding: 0 10px;
+        }
+        .closeButton:hover {
+            color: #000;
+            background: none;
+        }
+        #statsPanel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 20px;
+            border-radius: 8px;
+            color: #fff;
+            min-width: 300px;
+            font-size: 18px;
+            line-height: 1.6;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            z-index: 100;
+        }
+        #statsPanel .stat-line {
+            margin: 8px 0;
+            font-weight: 500;
+        }
+        #statsPanel .stat-label {
+            color: #aaa;
+            font-weight: 400;
+        }
+        #statsPanel .stat-value {
+            color: #fff;
+            font-weight: 600;
+        }
+        #statsPanel .monster-level {
+            color: #ffcc00;
+        }
+        #statsPanel .attack-ready {
+            color: #66ff99;
+        }
+        #statsPanel .attack-cooldown {
+            color: #ffcc00;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    
+    <!-- Stats Panel -->
+    <div id="statsPanel">
+        <div class="stat-line"><span class="stat-label">Health:</span> <span class="stat-value" id="stat-health">0 / 100</span></div>
+        <div class="stat-line"><span class="stat-label">Gold:</span> <span class="stat-value" id="stat-gold">0</span></div>
+        <div class="stat-line"><span class="stat-label">Power-Up Points:</span> <span class="stat-value" id="stat-skillpoints">0</span></div>
+        <div class="stat-line"><span class="stat-label">Attack Power:</span> <span class="stat-value" id="stat-attack">0</span></div>
+        <div class="stat-line monster-level"><span class="stat-label">Monster Level:</span> <span class="stat-value" id="stat-monster-level">1</span></div>
+        <div class="stat-line"><span class="stat-label">PvP K/D:</span> <span class="stat-value" id="stat-pvp-kd">0/0</span></div>
+    </div>
+    
+    <button id="helpButton" onclick="toggleHelpModal()" title="Game Guide & FAQ">?</button>
+    <a id="rankingsButton" href="rankings.html" target="_blank" rel="noopener" title="View weekly PvP leaderboards">🏆 Rankings</a>
+    <button id="pvpButton" onclick="enterPvPArena()" title="Enter PvP Arena - Battle other players!">⚔️ Enter PvP Arena</button>
+    
+    <div id="clickArea">CLICK TO ATTACK</div>
+    
+    <!-- Loading message overlay -->
+    <div id="loadingMessage" class="loading-message">
+        <div>⚔️ Entering PvP Arena...</div>
+        <div style="font-size: 14px; margin-top: 10px; opacity: 0.8;">Preparing for battle</div>
+    </div>
+    
+    <div id="controls">
+        <h2>Idle Clicker</h2>
+        
+        <div class="section">
+            <h3>Companions</h3>
+            <button id="btn-warrior" onclick="buyCompanion('warrior')">Warrior (20g)</button>
+            <button id="btn-archer" onclick="buyCompanion('archer')">Archer (100g)</button>
+            <button id="btn-mage" onclick="buyCompanion('mage')">Mage (400g)</button>
+            <button id="btn-priest" onclick="buyCompanion('priest')">Priest (1000g)</button>
+        </div>
+        
+        <div class="section">
+            <h3>Power-Ups</h3>
+            <button class="skill-btn" id="skill-maxHealth" onclick="upgradeSkill('maxHealth')">Vitality (Lv 0) - 1 PuP</button>
+            <button class="skill-btn" id="skill-attackPower" onclick="upgradeSkill('attackPower')">Strength (Lv 0) - 1 PuP</button>
+            <button class="skill-btn" id="skill-clickDamage" onclick="upgradeSkill('clickDamage')">Precision (Lv 0) - 2 PuP</button>
+            <button class="skill-btn" id="skill-companionDamage" onclick="upgradeSkill('companionDamage')">Leadership (Lv 0) - 2 PuP</button>
+            <button class="skill-btn" id="skill-goldMultiplier" onclick="upgradeSkill('goldMultiplier')">Fortune (Lv 0) - 2 PuP</button>
+            <button class="skill-btn" id="skill-healthRegen" onclick="upgradeSkill('healthRegen')">Regen (Lv 0) - 2 PuP</button>
+        </div>
+    </div>
+
+    <div id="helpModal">
+        <div id="helpModalContent">
+            <button class="closeButton" onclick="toggleHelpModal()">×</button>
+            
+            <h1>Idle Clicker RPG - Game Guide</h1>
+            
+            <h2>How to Play</h2>
+            <p>Click the ATTACK button to damage monsters. Defeat monsters to progress through levels, earn gold, and gain power-up points!</p>
+            
+            <h3>Combat System</h3>
+            <ul>
+                <li><strong>Attacking:</strong> Click the ATTACK button to deal damage to the monster</li>
+                <li><strong>Monster Retaliation:</strong> Monsters attack back after you hit them</li>
+                <li><strong>Health Management:</strong> Your health does NOT restore between battles - manage it carefully!</li>
+                <li><strong>Death:</strong> If your health reaches 0, you respawn with full health at the same level</li>
+            </ul>
+            
+            <h3>Progression</h3>
+            <ul>
+                <li><strong>Levels:</strong> Defeat monsters to progress to higher levels</li>
+                <li><strong>Power-up Points:</strong> Earn 1 power-up point every 5 levels (levels 5, 10, 15, 20, etc.)</li>
+                <li><strong>Gold:</strong> Earn gold from defeating monsters (100% on victory, 5% on death)</li>
+                <li><strong>Difficulty:</strong> Monster health and attack power increase with each level</li>
+            </ul>
+            
+            <h2>Power-Ups</h2>
+            <p>Use power-up points to unlock power-ups (max level 25 each):</p>
+            <ul>
+                <li><strong>Vitality (1 PuP):</strong> Increases your maximum health by 20 HP per level</li>
+                <li><strong>Strength (1 PuP):</strong> Boosts your base attack power by 2 per level</li>
+                <li><strong>Precision (2 PuP):</strong> Increases chance to do double damage by 5% per level</li>
+                <li><strong>Leadership (2 PuP):</strong> Boosts companion damage by 20% per level</li>
+                <li><strong>Fortune (2 PuP):</strong> Increases gold earned by 10% per level</li>
+                <li><strong>Regeneration (2 PuP):</strong> Restores 1 HP per second per level</li>
+            </ul>
+            
+            <h2>Companions</h2>
+            <p>Purchase companions with gold to auto-attack monsters:</p>
+            <ul>
+                <li><strong>Warrior:</strong> Deals 2 damage every 1 second (Cost: 20 gold)</li>
+                <li><strong>Archer:</strong> Deals 4 damage every 1 second (Cost: 100 gold)</li>
+                <li><strong>Mage:</strong> Deals 16 damage every 2 seconds (Cost: 400 gold)</li>
+                <li><strong>Priest:</strong> Deals 10 damage and heals you for 2 HP every 1 second (Cost: 1000 gold)</li>
+            </ul>
+            <p><em>Note: Companion damage is affected by your Leadership power-up level!</em></p>
+            
+            <h2>Tips & Strategy</h2>
+            <ul>
+                <li>Balance offense (Strength, Precision) with defense (Vitality, Regeneration)</li>
+                <li>Invest in companions early for passive damage while you're away</li>
+                <li>The Priest companion is crucial for long-term survival</li>
+                <li>Don't forget - health doesn't restore between battles!</li>
+                <li>Leadership power-up makes all your companions more powerful</li>
+                <li>Fortune power-up helps you earn gold faster for more companions</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="scripts/utils.js"></script>
+    <script src="../shared/movement.js"></script>
+    <script src="scripts/camera.js"></script>
+    <!-- input.js removed - movement is PvP Arena only -->
+    <script src="scripts/prediction.js"></script>
+    <script src="scripts/draw.js"></script>
+    <script src="scripts/client.js"></script>
+    <script src="scripts/game.js"></script>
+    
+    <script>
+        // ============================================================================
+        // IMAGE ASSET LOADING SYSTEM
+        // ============================================================================
+        // Global image cache for backgrounds and monsters
+        var gameImages = {
+            backgrounds: {},
+            monsters: {},
+            characters: {},
+            loaded: false,
+            loadingProgress: 0,
+            totalImages: 0
+        };
+        
+        /**
+         * Preload all game images (backgrounds and monsters)
+         * This should be called before the game starts
+         */
+        function preloadGameImages(callback) {
+            function resolveAssetPath(relativePath) {
+                return new URL(relativePath, window.location.href).href;
+            }
+
+            // Background images - mapped to level ranges (themes)
+            var backgroundImages = [
+                { key: 'Forest', path: resolveAssetPath('../Art/Backgrounds/Forest.png') },
+                { key: 'Desert', path: resolveAssetPath('../Art/Backgrounds/Desert.png') },
+                { key: 'Ocean', path: resolveAssetPath('../Art/Backgrounds/Ocean.png') },
+                { key: 'Volcano', path: resolveAssetPath('../Art/Backgrounds/Volcano.png') },
+                { key: 'Ice', path: resolveAssetPath('../Art/Backgrounds/Ice.png') },
+                { key: 'Shadow', path: resolveAssetPath('../Art/Backgrounds/Shadow.png') },
+                { key: 'Crystal', path: resolveAssetPath('../Art/Backgrounds/Crystal.png') },
+                { key: 'Toxic', path: resolveAssetPath('../Art/Backgrounds/Toxic.png') },
+                { key: 'Inferno', path: resolveAssetPath('../Art/Backgrounds/Inferno.png') },
+                { key: 'Void', path: resolveAssetPath('../Art/Backgrounds/Void.png') }
+            ];
+            
+            // Monster images - mapped to level ranges (themes)
+            var monsterImages = [
+                { key: 'Forest', path: resolveAssetPath('../Art/Monsters/Grove Guardian (Forest).png') },
+                { key: 'Desert', path: resolveAssetPath('../Art/Monsters/Sun-Scorch Stalker (Desert).png') },
+                { key: 'Ocean', path: resolveAssetPath('../Art/Monsters/Deep-Current Abomination (Ocean).png') },
+                { key: 'Volcano', path: resolveAssetPath('../Art/Monsters/Ash-Wrought Terror (Volcano).png') },
+                { key: 'Ice', path: resolveAssetPath('../Art/Monsters/Frost-Weaver (Ice).png') },
+                { key: 'Shadow', path: resolveAssetPath('../Art/Monsters/Darkness-Seeker (Shadow).png') },
+                { key: 'Crystal', path: resolveAssetPath('../Art/Monsters/Facet-Hulk (Crystal).png') },
+                { key: 'Toxic', path: resolveAssetPath('../Art/Monsters/Blight-Crawler (Toxic).png') },
+                { key: 'Inferno', path: resolveAssetPath('../Art/Monsters/Empyrean Cinder (Inferno).png') },
+                { key: 'Void', path: resolveAssetPath('../Art/Monsters/Void-Eater (Void).png') }
+            ];
+            
+            // Character images — player and companions
+            var characterImages = [
+                { key: 'Player',  path: resolveAssetPath('../Art/Characters/Player.png') },
+                { key: 'Warrior', path: resolveAssetPath('../Art/Characters/Warrior.png') },
+                { key: 'Mage',    path: resolveAssetPath('../Art/Characters/Mage.png') },
+                { key: 'Archer',  path: resolveAssetPath('../Art/Characters/Archer.png') },
+                { key: 'Priest',  path: resolveAssetPath('../Art/Characters/Priest.png') }
+            ];
+
+            gameImages.totalImages = backgroundImages.length + monsterImages.length + characterImages.length;
+            var loadedCount = 0;
+            
+            function imageLoaded(key, path, type, img) {
+                loadedCount++;
+                gameImages.loadingProgress = (loadedCount / gameImages.totalImages) * 100;
+                console.log('[assets] loaded ' + type + ' "' + key + '" from ' + path + ' (' + img.naturalWidth + 'x' + img.naturalHeight + ')');
+                console.log('Image loading progress: ' + Math.floor(gameImages.loadingProgress) + '%');
+                
+                if (loadedCount === gameImages.totalImages) {
+                    gameImages.loaded = true;
+                    console.log('All game images loaded successfully!');
+                    if (callback) callback();
+                }
+            }
+            
+            function imageError(key, path, type) {
+                console.error('[assets] failed to load ' + type + ' "' + key + '" from ' + path);
+                imageLoaded(key, path, type, { naturalWidth: 0, naturalHeight: 0 }); // Still count it to prevent hanging
+            }
+            
+            // Load background images
+            backgroundImages.forEach(function(imgData) {
+                var img = new Image();
+                img.onload = function() { imageLoaded(imgData.key, imgData.path, 'background', img); };
+                img.onerror = function() { imageError(imgData.key, imgData.path, 'background'); };
+                img.src = imgData.path;
+                gameImages.backgrounds[imgData.key] = img;
+            });
+            
+            // Load monster images
+            monsterImages.forEach(function(imgData) {
+                var img = new Image();
+                img.onload = function() { imageLoaded(imgData.key, imgData.path, 'monster', img); };
+                img.onerror = function() { imageError(imgData.key, imgData.path, 'monster'); };
+                img.src = imgData.path;
+                gameImages.monsters[imgData.key] = img;
+            });
+            // Load character images
+            characterImages.forEach(function(imgData) {
+                var img = new Image();
+                img.onload = function() { imageLoaded(imgData.key, imgData.path, 'character', img); };
+                img.onerror = function() { imageError(imgData.key, imgData.path, 'character'); };
+                img.src = imgData.path;
+                gameImages.characters[imgData.key] = img;
+            });
+        }
+        
+        // Power-Up definitions (must match server/data/skills.js)
+        var SKILL_DEFINITIONS = {
+            maxHealth: { name: 'Vitality', maxLevel: 25, costPerLevel: 1, description: '+20 HP' },
+            attackPower: { name: 'Strength', maxLevel: 25, costPerLevel: 1, description: '+2 ATK' },
+            clickDamage: { name: 'Precision', maxLevel: 25, costPerLevel: 2, description: '+5% Crit' },
+            companionDamage: { name: 'Leadership', maxLevel: 25, costPerLevel: 2, description: '+20% Comp' },
+            goldMultiplier: { name: 'Fortune', maxLevel: 25, costPerLevel: 2, description: '+10% Gold' },
+            healthRegen: { name: 'Regeneration', maxLevel: 25, costPerLevel: 2, description: '+1 HP/s' }
+        };
+        
+        // Calculate current companion cost based on its current level.
+        // Each companion type has one entry; cost scales with that entry's level.
+        function getCompanionCost(companionId, baseData) {
+            var companions = entities[myID] && entities[myID].companions;
+            var currentLevel = 0;
+            if (Array.isArray(companions)) {
+                for (var i = 0; i < companions.length; i++) {
+                    if (companions[i] && companions[i].type === companionId) {
+                        currentLevel = companions[i].level || 1;
+                        break;
+                    }
+                }
+            }
+            return Math.floor(baseData.baseCost * Math.pow(1.5, currentLevel));
+        }
+        
+        // Update companion button displays with current costs
+        function updateCompanionButtons() {
+            if (!entities[myID]) return;
+            
+            const companionData = {
+                warrior: { baseCost: 20 },
+                archer: { baseCost: 100 },
+                mage: { baseCost: 400 },
+                priest: { baseCost: 1000 }
+            };
+            
+            console.log('Updating companion buttons, companions:', entities[myID]?.companions);
+            
+            var companions = entities[myID] && entities[myID].companions;
+            for (const [id, data] of Object.entries(companionData)) {
+                const cost = getCompanionCost(id, data);
+                const btn = document.getElementById(`btn-${id}`);
+                if (btn) {
+                    const name = id.charAt(0).toUpperCase() + id.slice(1);
+                    // Find current level for this companion type
+                    var currentLevel = 0;
+                    if (Array.isArray(companions)) {
+                        for (var i = 0; i < companions.length; i++) {
+                            if (companions[i] && companions[i].type === id) {
+                                currentLevel = companions[i].level || 1;
+                                break;
+                            }
+                        }
+                    }
+                    if (currentLevel > 0) {
+                        btn.textContent = `${name} Lv${currentLevel} → ${cost}g`;
+                    } else {
+                        btn.textContent = `${name} (${cost}g)`;
+                    }
+                }
+            }
+        }
+        
+        // Update power-up button displays
+        function updateSkillButtons() {
+            // Get local player
+            if (typeof entities === 'undefined' || typeof myID === 'undefined') return;
+            var localPlayer = entities[myID];
+            if (!localPlayer || !localPlayer.skillTree) return;
+            
+            console.log('Updating skill buttons, skillTree:', localPlayer.skillTree, 'skillPoints:', localPlayer.skillPoints);
+            
+            // Update each power-up button
+            for (var skillId in SKILL_DEFINITIONS) {
+                var skillDef = SKILL_DEFINITIONS[skillId];
+                var currentLevel = localPlayer.skillTree[skillId] || 0;
+                var button = document.getElementById('skill-' + skillId);
+                
+                if (button) {
+                    if (currentLevel >= skillDef.maxLevel) {
+                        // Power-Up is maxed out
+                        button.textContent = skillDef.name + ' (MAX)';
+                        button.disabled = true;
+                    } else {
+                        // Cost scales +1 for every 5 levels (matches server getSkillCost)
+                        var cost = skillDef.costPerLevel + Math.floor(currentLevel / 5);
+                        button.textContent = skillDef.name + ' (Lv ' + currentLevel + ') - ' + cost + ' PuP';
+                        button.disabled = (localPlayer.skillPoints < cost);
+                    }
+                }
+            }
+        }
+        
+        // Update HTML stats panel
+        function updateStatsPanel() {
+            if (!entities[myID]) return;
+            
+            var player = entities[myID];
+            var cooldownLeft = Math.max(0, pvpEffects.attackCooldownUntil - Date.now());
+            
+            // Update each stat
+            document.getElementById('stat-health').textContent = Math.floor(player.health || 0) + ' / ' + (player.maxHealth || 100);
+            document.getElementById('stat-gold').textContent = player.gold || 0;
+            document.getElementById('stat-skillpoints').textContent = player.skillPoints || 0;
+            document.getElementById('stat-attack').textContent = player.attackPower || 0;
+            document.getElementById('stat-monster-level').textContent = player.currentMonsterLevel || 1;
+            document.getElementById('stat-pvp-kd').textContent = (player.kills || 0) + '/' + (player.deaths || 0);
+            
+            // These elements are optional in this page layout.
+            var companionsEl = document.getElementById('stat-companions');
+            if (companionsEl) {
+                companionsEl.textContent = player.companionsCount || 0;
+            }
+            
+            var attackStatusEl = document.getElementById('stat-attack-status');
+            if (attackStatusEl) {
+                if (cooldownLeft > 0) {
+                    attackStatusEl.textContent = 'Cooldown ' + (cooldownLeft / 1000).toFixed(1) + 's';
+                    attackStatusEl.className = 'stat-value attack-cooldown';
+                } else {
+                    attackStatusEl.textContent = 'Ready';
+                    attackStatusEl.className = 'stat-value attack-ready';
+                }
+            }
+        }
+        
+        // Call update functions periodically
+        setInterval(function() {
+            updateSkillButtons();
+            updateCompanionButtons();
+            updateStatsPanel();
+        }, 100);
+        
+        // Click attack handler
+        document.getElementById('clickArea').addEventListener('click', function() {
+            if (typeof client !== 'undefined' && client.sendPlayerClick) {
+                client.sendPlayerClick();
+            } else if (server) {
+                // Fallback: send click event directly
+                server.emit('playerClick', {});
+            }
+        });
+        
+        // Companion purchase handler
+        function buyCompanion(type) {
+            if (typeof client !== 'undefined' && client.purchaseCompanion) {
+                client.purchaseCompanion(type, function(result) {
+                    if (result.success) {
+                        console.log('Purchased ' + type + ' for ' + result.cost + ' gold');
+                        updateCompanionButtons(); // Update button costs immediately
+                    } else {
+                        console.log('Purchase failed: ' + result.error);
+                    }
+                });
+            } else if (server) {
+                // Fallback: must use 'companionType' key — matches server/messenger.js check
+                server.emit('purchaseCompanion', { companionType: type });
+            }
+        }
+        
+        // Power-Up upgrade handler
+        function upgradeSkill(skillId) {
+            if (typeof client !== 'undefined' && client.upgradeSkill) {
+                client.upgradeSkill(skillId, function(result) {
+                    if (result.success) {
+                        console.log('Upgraded ' + skillId + ' to level ' + result.newLevel);
+                        updateSkillButtons(); // Update display immediately
+                    } else {
+                        console.log('Upgrade failed: ' + result.error);
+                    }
+                });
+            } else if (server) {
+                // Fallback: send upgrade event directly
+                server.emit('upgradeSkill', { skillId: skillId });
+            }
+        }
+        
+        // Help modal toggle function
+        function toggleHelpModal() {
+            const modal = document.getElementById('helpModal');
+            if (modal.style.display === 'none' || modal.style.display === '') {
+                modal.style.display = 'block';
+            } else {
+                modal.style.display = 'none';
+            }
+        }
+        
+        // PvP Arena entry function
+        function enterPvPArena() {
+            // Show confirmation dialog
+            const confirmed = confirm(
+                "Enter PvP Arena?\n\n" +
+                "Your character stats will be used in combat against other players.\n\n" +
+                "⚔️ Health: " + (entities[myID]?.health || 0) + "/" + (entities[myID]?.maxHealth || 100) + "\n" +
+                "💪 Attack Power: " + (entities[myID]?.attackPower || 10) + "\n" +
+                "🏆 Level: " + (entities[myID]?.level || 1) + "\n\n" +
+                "Are you ready to battle?"
+            );
+            
+            if (!confirmed) {
+                return;
+            }
+            
+            // Show loading message
+            const loadingMessage = document.getElementById('loadingMessage');
+            if (loadingMessage) {
+                loadingMessage.style.display = 'block';
+            }
+            
+            if (typeof server === 'undefined' || !server) {
+                if (loadingMessage) loadingMessage.style.display = 'none';
+                alert('Unable to connect to PvP Arena.\n\nPlease ensure you are connected to the game server.');
+                return;
+            }
+
+            console.log('Switching to PvP arena...');
+
+            // Listen for the server's gameState confirmation that we are in the PvP room,
+            // THEN redirect — this ensures the socket isn't torn down before the switch completes.
+            server.once('gameState', function(gs) {
+                var roomSig = gs.gameID;
+                console.log('Received gameState for PvP room ' + roomSig + ', redirecting...');
+                // Pass the room sig so play.html can join the exact room, not a fresh one.
+                sessionStorage.setItem('pendingRoomSig', roomSig);
+                window.location.href = 'play.html';
+            });
+
+            server.emit('switchRoom', { targetRoomType: 'pvp' });
+        }
+        
+        // Close modal when clicking outside the content
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('helpModal');
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        toggleHelpModal();
+                    }
+                });
+            }
+        });
+        
+        // Start the game when page loads
+        window.addEventListener('load', function() {
+            console.log('Idle Clicker game starting...');
+            
+            // Start loading images in the background (non-blocking)
+            console.log('Loading game images in background...');
+            preloadGameImages(function() {
+                console.log('All game images loaded successfully!');
+            });
+            
+            // Start the game immediately - don't wait for images
+            // Images will be used when they finish loading, fallback rendering works without them
+            console.log('Starting game (images will load in background)...');
+            boot();
+        });
+    </script>
+</body>
+</html>

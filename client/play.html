@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Multiplayer Engine Skeleton</title>
+    <style>
+        html, body { margin: 0; height: 100%; background: #14141a; color: #ddd;
+            font-family: system-ui, sans-serif; overflow: hidden; }
+        #wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 12px; min-height: 100vh; }
+        #gameCanvas { background: #20202a; border: 1px solid #000; cursor: crosshair; box-shadow: 0 0 24px rgba(0,0,0,0.35); display: block; margin: 0 auto; }
+        #hint { font-size: 13px; opacity: 0.85; max-width: 1200px; text-align: center; }
+        #rankingsButton {
+            position: absolute;
+            top: 60px;
+            right: 200px;
+            width: auto;
+            min-width: 140px;
+            height: 40px;
+            padding: 0 15px;
+            font-size: 14px;
+            background: linear-gradient(135deg, #7c5cd8 0%, #6344c0 100%);
+            color: white;
+            border: 2px solid #5b3fa8;
+            border-radius: 20px;
+            cursor: pointer;
+            z-index: 1000;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #rankingsButton:hover {
+            background: linear-gradient(135deg, #6344c0 0%, #4e35a8 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4);
+        }
+        #exitPvpButton {
+            position: absolute;
+            top: 60px;
+            right: 20px;
+            width: auto;
+            min-width: 160px;
+            height: 40px;
+            padding: 0 15px;
+            font-size: 14px;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: 2px solid #388E3C;
+            border-radius: 20px;
+            cursor: pointer;
+            z-index: 1000;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        #exitPvpButton:hover {
+            background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4);
+        }
+        #exitPvpButton:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div id="wrap">
+        <div id="hint">Move with <b>WASD</b> / <b>arrows</b>. In arena PvP, <b>hover near an enemy</b> to preview attack range and <b>click near a player</b> to attack. Health bars, kill feed, cooldown state, and respawn overlay are rendered on the canvas.</div>
+        <a id="rankingsButton" href="rankings.html" target="_blank" rel="noopener" title="View weekly PvP leaderboards">🏆 Rankings</a>
+        <button id="exitPvpButton" onclick="exitPvPArena()" title="Return to IdleClicker - Your stats will be preserved">🏠 Return to IdleClicker</button>
+        <canvas id="gameCanvas" width="1200" height="800"></canvas>
+    </div>
+
+    <!-- Socket.IO client, served by the Socket.IO server on the same port. -->
+    <script src="/socket.io/socket.io.js"></script>
+    <!-- Shared movement integrator — the SAME code the server runs, so client-side
+         prediction agrees with the authoritative server. Must load before prediction.js. -->
+    <script src="/shared/movement.js"></script>
+    <!-- Raw <script> tags in dependency order — no bundler, no build step. -->
+    <script src="scripts/utils.js"></script>
+    <script src="scripts/camera.js"></script>
+    <script src="scripts/game.js"></script>
+    <script src="scripts/prediction.js"></script>
+    <script src="scripts/client.js"></script>
+    <script src="scripts/draw.js"></script>
+    <script src="scripts/input.js"></script>
+    
+    <script>
+        // Exit PvP Arena and return to IdleClicker
+        function exitPvPArena() {
+            // Get current player stats for confirmation dialog
+            const player = entities && myID ? entities[myID] : null;
+            const health = player ? player.health : 0;
+            const maxHealth = player ? player.maxHealth : 100;
+            const level = player ? player.level : 1;
+            const gold = player ? player.gold : 0;
+            const kills = player ? player.kills : 0;
+            const deaths = player ? player.deaths : 0;
+            
+            // Show confirmation dialog with current stats
+            const confirmed = confirm(
+                "Return to IdleClicker?\n\n" +
+                "Your current stats:\n" +
+                "💰 Gold: " + gold + "\n" +
+                "🏆 Level: " + level + "\n" +
+                "⚔️ Kills: " + kills + "\n" +
+                "💀 Deaths: " + deaths + "\n" +
+                "❤️ Health: " + health + "/" + maxHealth + "\n\n" +
+                "All your stats will be preserved.\n" +
+                "Are you ready to leave the arena?"
+            );
+            
+            if (!confirmed) {
+                return;
+            }
+            
+            // Show loading message
+            showLoadingMessage('🏠 Returning to IdleClicker...', 'Your stats are being saved');
+            
+            if (typeof server === 'undefined' || !server) {
+                hideLoadingMessage();
+                alert('Unable to return to IdleClicker.\n\nPlease ensure you are connected to the game server.');
+                return;
+            }
+
+            console.log('Switching back to IdleClicker...');
+
+            // Wait for the server to confirm the room switch before navigating,
+            // so the socket stays alive long enough to complete the transfer.
+            server.once('gameState', function(gs) {
+                var roomSig = gs.gameID;
+                console.log('Received gameState for PvE room ' + roomSig + ', redirecting...');
+                sessionStorage.setItem('pendingRoomSig', roomSig);
+                window.location.href = 'idleclicker.html';
+            });
+
+            server.emit('switchRoom', { targetRoomType: 'pve' });
+        }
+        
+        // Show loading message overlay
+        function showLoadingMessage(title, subtitle) {
+            // Remove any existing loading overlay
+            hideLoadingMessage();
+            
+            // Create loading overlay
+            const overlay = document.createElement('div');
+            overlay.id = 'loadingOverlay';
+            overlay.style.cssText =
+                'position: fixed;' +
+                'top: 0;' +
+                'left: 0;' +
+                'width: 100%;' +
+                'height: 100%;' +
+                'background: rgba(0, 0, 0, 0.9);' +
+                'display: flex;' +
+                'flex-direction: column;' +
+                'align-items: center;' +
+                'justify-content: center;' +
+                'z-index: 3000;';
+            
+            // Create title
+            const titleDiv = document.createElement('div');
+            titleDiv.style.cssText =
+                'color: white;' +
+                'font-size: 24px;' +
+                'font-weight: bold;' +
+                'margin-bottom: 10px;';
+            titleDiv.textContent = title;
+            
+            // Create subtitle
+            const subtitleDiv = document.createElement('div');
+            subtitleDiv.style.cssText =
+                'color: white;' +
+                'font-size: 14px;' +
+                'opacity: 0.8;';
+            subtitleDiv.textContent = subtitle;
+            
+            overlay.appendChild(titleDiv);
+            overlay.appendChild(subtitleDiv);
+            document.body.appendChild(overlay);
+        }
+        
+        // Hide loading message overlay
+        function hideLoadingMessage() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                overlay.remove();
+            }
+        }
+
+        // Boot the game loop. This is intentionally called here (not inside game.js)
+        // so play.html controls the timing — matching the same pattern as idleclicker.html.
+        window.addEventListener('load', function () {
+            boot();
+        });
+    </script>
+</body>
+</html>
