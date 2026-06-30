@@ -3,6 +3,9 @@
     "version": "2.0.0",
     "description": "A server-authoritative multiplayer game engine skeleton (Node + Socket.IO + canvas) with client-side prediction, an entity model, static geometry, and a pluggable game-mode seam.",
     "main": "index.js",
+    "engines": {
+        "node": ">=22"
+    },
     "scripts": {
         "start": "node index.js",
         "test": "node test/run.js",
