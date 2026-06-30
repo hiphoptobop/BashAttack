@@ -2,8 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [master, engine-skele, engine-upgrades]
+    branches: [main, dev]
   pull_request:
+    branches: [main]
 
 jobs:
   test:
