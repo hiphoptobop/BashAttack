@@ -134,6 +134,34 @@
             transform: translateY(-2px);
             box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4);
         }
+        #pvpButton {
+            position: absolute;
+            top: 60px;
+            right: 280px;
+            width: auto;
+            min-width: 160px;
+            height: 40px;
+            padding: 0 15px;
+            font-size: 14px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            color: white;
+            border: 2px solid #ff4757;
+            border-radius: 20px;
+            cursor: pointer;
+            z-index: 1000;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        #pvpButton:hover {
+            background: linear-gradient(135deg, #ff5252 0%, #e84a5f 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4);
+        }
+        #pvpButton:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
         #helpModal {
             display: none;
             position: fixed;
@@ -245,7 +273,8 @@
     
     <button id="helpButton" onclick="toggleHelpModal()" title="Game Guide & FAQ">?</button>
     <a id="rankingsButton" href="rankings.html" target="_blank" rel="noopener" title="View weekly PvP leaderboards">🏆 Rankings</a>
-    
+    <button id="pvpButton" onclick="enterPvPArena()" title="Enter PvP Arena - Battle other players!">⚔️ Enter PvP Arena</button>
+
     <div id="clickArea">CLICK TO ATTACK</div>
     
     <div id="controls">
@@ -634,6 +663,27 @@
             }
         }
         
+        // PvP Arena entry — switches the server room but stays on this page
+        function enterPvPArena() {
+            const confirmed = confirm(
+                "Enter PvP Arena?\n\n" +
+                "Your character stats will be used in combat against other players.\n\n" +
+                "⚔️ Health: " + (entities[myID]?.health || 0) + "/" + (entities[myID]?.maxHealth || 100) + "\n" +
+                "💪 Attack Power: " + (entities[myID]?.attackPower || 10) + "\n" +
+                "🏆 Level: " + (entities[myID]?.level || 1) + "\n\n" +
+                "Are you ready to battle?"
+            );
+            if (!confirmed) { return; }
+
+            if (typeof server === 'undefined' || !server) {
+                alert('Unable to connect to PvP Arena.\n\nPlease ensure you are connected to the game server.');
+                return;
+            }
+
+            console.log('Switching to PvP arena...');
+            server.emit('switchRoom', { targetRoomType: 'pvp' });
+        }
+
         // Close modal when clicking outside the content
         document.addEventListener('DOMContentLoaded', function() {
             const modal = document.getElementById('helpModal');
