@@ -65,6 +65,11 @@ app.use('/shared', express.static(path.join(__dirname, 'shared')));
 // Expose them at /Art so the client can load them without path traversal.
 app.use('/Art', express.static(path.join(__dirname, 'Art')));
 
+// Root redirect — always launch the IdleClicker game
+app.get('/', function(req, res) {
+    res.redirect('/idleclicker.html');
+});
+
 var utils = require('./server/utils.js');
 var messenger = require('./server/messenger.js');
 var hostess = require('./server/hostess.js');
@@ -78,7 +83,7 @@ app.get('/auth/discord', passport.authenticate('discord'));
 app.get('/auth/discord/callback',
     passport.authenticate('discord', { failureRedirect: '/login.html?error=discord_failed' }),
     function(req, res) {
-        res.redirect('/play.html');
+        res.redirect('/idleclicker.html');
     }
 );
 
@@ -136,7 +141,6 @@ app.use('/api/pvp/rankings', pvpRankingsRouter);
 
 // Protect game routes (optional - can be disabled for development)
 if (process.env.NODE_ENV === 'production') {
-    app.get('/play.html', authMiddleware.requireAuth);
     app.get('/idleclicker.html', authMiddleware.requireAuth);
 }
 

@@ -73,7 +73,7 @@ async function handleRaidLogin(event) {
         
         if (response.ok && data.success) {
             // Redirect to game
-            window.location.href = '/play.html';
+            window.location.href = '/idleclicker.html';
         } else {
             showError(data.error || 'Login failed. Please check your credentials.');
             showLoading(false);
@@ -96,7 +96,7 @@ async function checkAuthStatus() {
         if (data.authenticated) {
             // User is already authenticated, redirect to game
             console.log('User already authenticated:', data.user.username);
-            window.location.href = '/play.html';
+            window.location.href = '/idleclicker.html';
         }
     } catch (error) {
         console.error('Error checking auth status:', error);
