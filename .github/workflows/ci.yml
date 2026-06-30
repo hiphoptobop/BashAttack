@@ -14,5 +14,24 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Show environment
+        run: node --version && npm --version && uname -a
       - run: npm ci
-      - run: npm test
+      - name: Run standalone tests only
+        run: |
+          node test/movement.test.js
+          node test/physics.test.js
+          node test/engine.test.js
+          node test/queue.test.js
+          node test/lifecycle.test.js
+          node test/stability.test.js
+      - name: Start server and run integration tests
+        run: |
+          node index.js &
+          SERVER_PID=$!
+          echo "Server PID: $SERVER_PID"
+          sleep 4
+          node test/integration.test.js
+          RESULT=$?
+          kill $SERVER_PID 2>/dev/null || true
+          exit $RESULT
