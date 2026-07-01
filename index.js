@@ -26,6 +26,12 @@ var raidAuth = require('./server/auth/raid');
 var authMiddleware = require('./server/auth/middleware');
 var { autoSaveManager } = require('./server/persistence/saveManager');
 
+// Trust Railway / other reverse-proxy headers so that:
+//   1. req.ip reflects the real client IP (used by express-rate-limit)
+//   2. req.protocol is 'https' when Railway terminates TLS
+//   3. session cookies marked secure=true are actually sent
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(helmet({
     contentSecurityPolicy: false, // Disable for Socket.IO compatibility
@@ -44,7 +50,9 @@ const sessionMiddleware = session({
     cookie: {
         maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        // When behind Railway's proxy (trust proxy = 1), req.protocol === 'https',
+        // so 'auto' marks the cookie secure only when the connection actually is.
+        secure: 'auto',
         sameSite: 'lax'
     }
 });
@@ -64,6 +72,11 @@ app.use('/shared', express.static(path.join(__dirname, 'shared')));
 // Art assets (backgrounds, monster sprites) live at the project root under Art/.
 // Expose them at /Art so the client can load them without path traversal.
 app.use('/Art', express.static(path.join(__dirname, 'Art')));
+
+// Health-check endpoint for Railway (and general uptime monitors)
+app.get('/healthz', function(req, res) {
+    res.json({ status: 'ok' });
+});
 
 // Root redirect — always launch the IdleClicker game
 app.get('/', function(req, res) {

@@ -1,7 +1,7 @@
 'use strict';
 // Authentication middleware for Express routes and Socket.IO connections
 
-const rateLimit = require('express').rateLimit || null;
+const rateLimit = require('express-rate-limit');
 
 /**
  * Middleware to check if user is authenticated
@@ -95,12 +95,6 @@ function socketOptionalAuthMiddleware(socket, next) {
  * Prevents brute force attacks
  */
 function createAuthRateLimiter() {
-    // Check if express-rate-limit is available
-    if (!rateLimit) {
-        console.warn('express-rate-limit not available, rate limiting disabled');
-        return (req, res, next) => next();
-    }
-    
     return rateLimit({
         windowMs: 15 * 60 * 1000, // 15 minutes
         max: 5, // 5 requests per window

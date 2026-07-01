@@ -68,7 +68,7 @@ typings/
 sessions/
 
 # MongoDB data (if running locally)
-data/
+/data/
 mongodb/
 
 
