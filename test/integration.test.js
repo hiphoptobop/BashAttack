@@ -131,8 +131,8 @@ function getOwnedMonster(cl) {
     check('B sees both players', countType(b, 'player') === 2);
     check('each player gets an owned monster in PvE mode', !!getOwnedMonster(a) && !!getOwnedMonster(b));
     check('obstacle payload is delivered on join', Array.isArray(a.obstacles));
-    check('world arena delivered (1366x768)', a.world && a.world[2] === 1366 && a.world[3] === 768);
-    check('config delivered (single source of truth)', a.config != null && a.config.worldWidth === 1366);
+    check('world arena delivered (1200x800)', a.world && a.world[2] === 1200 && a.world[3] === 800);
+    check('config delivered (single source of truth)', a.config != null && a.config.worldWidth === 1200);
     check('state is playing (1)', a.state === 1);
 
     var startX = a.entities[a.id].x;

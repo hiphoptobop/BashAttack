@@ -21,7 +21,7 @@ function collide(v1, v2) {
     p1.cvX = p1.velX; p1.cvY = p1.velY; p2.cvX = p2.velX; p2.cvY = p2.velY;
     p1.hitThisTick = {}; p2.hitThisTick = {};
     var eng = _engine.getEngine({ p1: p1, p2: p2 });
-    eng.setWorldBounds(1366, 768);
+    eng.setWorldBounds(1200, 800);
     eng.broadBase([p1, p2]);
     return { p1: p1, p2: p2 };
 }
@@ -41,7 +41,7 @@ check('already separating => no exchange (-30 / 0)', near(c.p1.velX, -30) && nea
 // Wall: a circle pushed past the left edge is clamped inside and reflected.
 var w = new Player(5, 400, 'g', 'w', 0);
 w.velX = -100; w.newX = w.x + w.velX * 0.033; w.newY = w.y;
-_engine.bounceOffBoundry(w, { x: 0, y: 0, width: 1366, height: 768 });
+_engine.bounceOffBoundry(w, { x: 0, y: 0, width: 1200, height: 800 });
 check('wall clamps inside (newX >= radius)', w.newX >= 12);
 check('wall reflects velocity (velX > 0)', w.velX > 0);
 

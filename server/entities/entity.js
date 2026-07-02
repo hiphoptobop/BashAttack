@@ -63,6 +63,11 @@ class Entity extends Circle {
         if (!other.solid) {
             return;
         }
+        // In PvP, players pass through each other — no physics push. Combat is
+        // handled explicitly via pvpAttack events, not contact collision.
+        if (this.roomType === 'pvp' && other.type === 'player') {
+            return;
+        }
         // The broad-phase visits each pair from both sides; resolve it once per step.
         if (this.hitThisTick[other.id]) {
             return;
