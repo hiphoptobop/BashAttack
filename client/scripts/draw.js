@@ -5,9 +5,9 @@
 
 // Companion layout constants — shared by drawCompanions and drawCompanionEffects
 // so portrait positions and attack-effect origins are always in sync.
-var COMPANION_RADIUS  = 22;
+var COMPANION_RADIUS  = 32;
 var COMPANION_SPACING = COMPANION_RADIUS * 2 + 28;  // wider spread
-var COMPANION_GAP     = 36;  // gap between player edge and nearest companion
+var COMPANION_GAP     = 44;  // gap between player edge and nearest companion
 var COMPANION_LEFT    = ['warrior', 'mage'];
 var COMPANION_RIGHT   = ['archer', 'priest'];
 
@@ -140,7 +140,7 @@ function drawEntities(ctx) {
         // Skip monsters - they're drawn separately with drawMonster()
         if (e.type === 'monster') { continue; }
         var s = worldToScreen(e.x, e.y);
-        var r = (e.radius + 10) * camera.zoom;  // draw larger than the physics radius
+        var r = (e.radius + 20) * camera.zoom;  // draw larger than the physics radius
 
         var alpha = 1;
         if (e.isDead) {
@@ -601,7 +601,7 @@ function drawCompanions(ctx, player, camera) {
     var gap             = COMPANION_GAP;
 
     var playerScreen = worldToScreen(player.x, player.y);
-    var playerDrawRadius = 34;
+    var playerDrawRadius = 44;
     var belowOffset = (playerDrawRadius + companionRadius + 14) * camera.zoom;
     var rowScreenY = playerScreen.y + belowOffset;
 

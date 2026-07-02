@@ -328,7 +328,7 @@
             <p>Use power-up points to unlock power-ups (max level 25 each):</p>
             <ul>
                 <li><strong>Vitality (1 PuP):</strong> Increases your maximum health by 20 HP per level</li>
-                <li><strong>Strength (1 PuP):</strong> Boosts your base attack power by 2 per level</li>
+                <li><strong>Strength (1 PuP):</strong> Boosts your base attack power by 1 per level</li>
                 <li><strong>Precision (2 PuP):</strong> Increases chance to do double damage by 5% per level</li>
                 <li><strong>Leadership (2 PuP):</strong> Boosts companion damage by 20% per level</li>
                 <li><strong>Fortune (2 PuP):</strong> Increases gold earned by 10% per level</li>
@@ -341,7 +341,7 @@
                 <li><strong>Warrior:</strong> Deals 2 damage every 1 second (Cost: 20 gold)</li>
                 <li><strong>Archer:</strong> Deals 4 damage every 1 second (Cost: 100 gold)</li>
                 <li><strong>Mage:</strong> Deals 16 damage every 2 seconds (Cost: 400 gold)</li>
-                <li><strong>Priest:</strong> Deals 10 damage and heals you for 2 HP every 1 second (Cost: 1000 gold)</li>
+                <li><strong>Priest:</strong> Heals you for 2 HP every 1 second (Cost: 1000 gold)</li>
             </ul>
             <p><em>Note: Companion damage is affected by your Leadership power-up level!</em></p>
             
@@ -478,7 +478,7 @@
         // Power-Up definitions (must match server/data/skills.js)
         var SKILL_DEFINITIONS = {
             maxHealth: { name: 'Vitality', maxLevel: 25, costPerLevel: 1, description: '+20 HP' },
-            attackPower: { name: 'Strength', maxLevel: 25, costPerLevel: 1, description: '+2 ATK' },
+            attackPower: { name: 'Strength', maxLevel: 25, costPerLevel: 1, description: '+1 ATK' },
             clickDamage: { name: 'Precision', maxLevel: 25, costPerLevel: 2, description: '+5% Crit' },
             companionDamage: { name: 'Leadership', maxLevel: 25, costPerLevel: 2, description: '+20% Comp' },
             goldMultiplier: { name: 'Fortune', maxLevel: 25, costPerLevel: 2, description: '+10% Gold' },
@@ -663,14 +663,15 @@
             }
         }
         
-        // PvP Arena entry — switches the server room but stays on this page
+        // PvP Arena entry — request a server room switch then navigate to play.html
+        // once the server confirms with a gameState containing the new room's sig.
         function enterPvPArena() {
             const confirmed = confirm(
                 "Enter PvP Arena?\n\n" +
                 "Your character stats will be used in combat against other players.\n\n" +
-                "⚔️ Health: " + (entities[myID]?.health || 0) + "/" + (entities[myID]?.maxHealth || 100) + "\n" +
-                "💪 Attack Power: " + (entities[myID]?.attackPower || 10) + "\n" +
-                "🏆 Level: " + (entities[myID]?.level || 1) + "\n\n" +
+                "Health: " + (entities[myID]?.health || 0) + "/" + (entities[myID]?.maxHealth || 100) + "\n" +
+                "Attack Power: " + (entities[myID]?.attackPower || 10) + "\n" +
+                "Level: " + (entities[myID]?.level || 1) + "\n\n" +
                 "Are you ready to battle?"
             );
             if (!confirmed) { return; }
@@ -681,6 +682,16 @@
             }
 
             console.log('Switching to PvP arena...');
+
+            // Wait for the server to confirm the room switch before navigating,
+            // so the socket stays alive long enough to complete the transfer.
+            server.once('gameState', function(gs) {
+                var roomSig = gs.gameID;
+                console.log('Received gameState for PvP room ' + roomSig + ', redirecting...');
+                sessionStorage.setItem('pendingRoomSig', roomSig);
+                window.location.href = 'play.html';
+            });
+
             server.emit('switchRoom', { targetRoomType: 'pvp' });
         }
 

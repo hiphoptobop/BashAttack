@@ -30,7 +30,7 @@ const COMPANION_DEFINITIONS = {
         name: 'Priest',
         baseCost: 1000,
         costMultiplier: 1.5,
-        baseAttack: 10,
+        baseAttack: 0,
         attackSpeed: 1000,
         healAmount: 2
     }

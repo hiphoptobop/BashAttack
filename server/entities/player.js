@@ -215,8 +215,7 @@ class Player extends Entity {
     // PvP-specific methods
     canAttack(currentTime) {
         if (this.isDead) return false;
-        if (!this.lastAttackTime) return true;
-        return (currentTime - this.lastAttackTime) >= 1000; // 1 second cooldown
+        return true; // No cooldown — attack as fast as you can click
     }
     
     attackPlayer(target, currentTime) {
@@ -258,11 +257,12 @@ class Player extends Entity {
         this.health = this.maxHealth;
         this.isDead = false;
         this.respawnTime = null;
-        this.x = spawnX;
-        this.y = spawnY;
-        // Reset velocity
-        this.vx = 0;
-        this.vy = 0;
+        this.x    = spawnX;
+        this.y    = spawnY;
+        this.newX = spawnX;
+        this.newY = spawnY;
+        this.velX = 0;
+        this.velY = 0;
     }
     
     // Calculate companion positions relative to player

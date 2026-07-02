@@ -16,8 +16,8 @@ const SKILL_DEFINITIONS = {
         name: 'Strength',
         maxLevel: 25,
         costPerLevel: 1,
-        bonusPerLevel: 2,
-        description: '+2 attack power per level'
+        bonusPerLevel: 1,
+        description: '+1 attack power per level'
     },
     clickDamage: {
         name: 'Precision',

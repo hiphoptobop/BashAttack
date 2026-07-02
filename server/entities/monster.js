@@ -32,7 +32,7 @@ class Monster extends Entity {
         var levelOffset = Math.max(0, level - 1);
         
         // Health, attack, and rewards all rise smoothly every level.
-        this.maxHealth = Math.floor((60 + (levelOffset * 6)) * typeData.healthMultiplier);
+        this.maxHealth = Math.floor((60 + (levelOffset * 10)) * typeData.healthMultiplier);
         this.health = this.maxHealth;
         // Minimum 1 attack power. Apply type multiplier before flooring so fractional
         // multipliers (e.g. SLIME 0.7) don't round a low base down to 0.

@@ -6,7 +6,7 @@
 // - Click-to-attack combat system
 // - Player collision/attack range detection (100 pixels)
 // - Damage calculation using attackPower + skill bonuses
-// - Death/respawn mechanics (45 second respawn timer)
+// - Death/respawn mechanics (30 second respawn timer)
 // - PvP stats tracking (kills, deaths)
 // - Attack cooldown (1 second)
 //
@@ -67,7 +67,7 @@ function recordWeeklyStats(game, killerId, victimId) {
 
 // PvP Constants
 const ATTACK_RANGE  = 100;   // pixels
-const RESPAWN_TIME  = 45000; // 45 seconds in milliseconds
+const RESPAWN_TIME  = 30000; // 30 seconds in milliseconds
 const BOT_RESPAWN   = 8000;  // 8 seconds for the bot to respawn
 
 // Helper function to calculate distance between two entities
