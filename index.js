@@ -198,15 +198,15 @@ async function initializeServer() {
     console.log('=== Server Ready ===');
 }
 
+// Share session with Socket.IO — must be registered before any connections arrive.
+io.engine.use(sessionMiddleware);
+
 // Start server
 server.listen(c.port, async function () {
     console.log('listening on *:' + c.port);
-    await initializeServer();
     messenger.build(io);
+    await initializeServer();
 });
-
-// Share session with Socket.IO
-io.engine.use(sessionMiddleware);
 
 // Optional authentication for Socket.IO connections
 io.use(authMiddleware.socketOptionalAuthMiddleware);
@@ -231,56 +231,6 @@ io.on('connection', function (client) {
         checkForSleep();
     });
     
-    // Handle PvP attack requests from clients
-    client.on('pvpAttack', function (data) {
-        try {
-            // Validate the request
-            if (!data || !data.targetId) {
-                console.log('Invalid pvpAttack request from ' + client.id);
-                return;
-            }
-            
-            // Get the player's current room using messenger's room mail list
-            var roomSig = messenger.getRoomSigByClientId(client.id);
-            if (!roomSig) {
-                console.log('Player ' + client.id + ' not in a room');
-                return;
-            }
-            
-            var room = hostess.getRoomBySig(roomSig);
-            if (!room) {
-                console.log('Room not found: ' + roomSig);
-                return;
-            }
-            
-            // Only allow attacks in PvP rooms
-            if (room.game.mode.name !== 'pvp') {
-                console.log('Player ' + client.id + ' attempted attack in non-PvP room');
-                return;
-            }
-            
-            // The attacker's player ID is the same as their client ID
-            var attackerId = client.id;
-            
-            // Verify attacker exists in the room
-            if (!room.playerList[attackerId]) {
-                console.log('Attacker not found in room: ' + attackerId);
-                return;
-            }
-            
-            // Handle the attack through the PvP mode
-            var result = room.game.mode.handleAttack(room.game, attackerId, data.targetId);
-            
-            if (!result.success) {
-                // Send error back to attacker only (don't broadcast failed attacks)
-                client.emit('pvpAttackError', { error: result.error });
-            }
-            // Success case is already broadcast by the mode's handleAttack method
-            
-        } catch (error) {
-            console.log('Error handling pvpAttack for ' + client.id + ': ' + error.message);
-        }
-    });
 });
 
 process.on('SIGINT', async function () {

@@ -96,11 +96,6 @@ module.exports = function createPvPMode() {
             console.log('Spawned tier-' + tier + ' bot in room ' + game.roomSig);
         },
 
-        onStop: function (game) {
-            console.log('PvP mode stopped in room ' + game.roomSig);
-            // The host clears non-player entities after this returns
-        },
-
         onPlayerJoin: function (game, player) {
             // Stats are already reset to PvP defaults by hostess.switchPlayerRoom
             // before this hook is called. Nothing to do except log.

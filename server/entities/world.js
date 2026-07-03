@@ -43,10 +43,13 @@ class World extends Rect {
             return;
         }
 
-        // Idle clicker keeps the player in a consistent visible position.
-        entity.x = 600;
+        // Idle clicker: each player gets their own unique position so they don't
+        // stack. Spread them in a row, 300px apart, centred around x=600.
+        var playerCount = Object.keys(this.playerList).length;
+        var spawnX = 600 + playerCount * 300;
+        entity.x = spawnX;
         entity.y = 600;
-        entity.newX = 600;
+        entity.newX = spawnX;
         entity.newY = 600;
     }
     // Return a random location at least `margin` pixels from the world edges.

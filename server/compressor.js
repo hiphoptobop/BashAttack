@@ -79,7 +79,10 @@ function entitySpawnPacket(e) {
     if (e.type === 'monster') {
         return ['monster', e.id, Math.round(e.x), Math.round(e.y), e.color, e.radius,
                 e.health, e.maxHealth, e.ownerId, e.level];
-    } else if (e.type === 'player' && e.gold !== undefined) {
+    } else if (e.type === 'player' && e.gold !== undefined && e.roomType !== 'pvp') {
+        // Idle-clicker player: extended spawn packet with progression fields.
+        // PvP players (roomType === 'pvp') use the standard 6-field packet — this
+        // includes the bot (which has gold=0 but roomType='pvp').
         return ['player', e.id, Math.round(e.x), Math.round(e.y), e.color, e.radius,
                 e.health, e.maxHealth, e.gold, e.tier, e.attackPower, e.skillPoints, e.monstersDefeated, e.currentMonsterLevel, e.companions || [], e.avatarUrl || null];
     } else {

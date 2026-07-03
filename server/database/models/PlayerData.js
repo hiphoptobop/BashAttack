@@ -137,19 +137,9 @@ const playerDataSchema = new mongoose.Schema({
     sessionCount: {
         type: Number,
         default: 0
-    },
-    
-    // Metadata
-    createdAt: {
-        type: Date,
-        default: Date.now,
-        immutable: true
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now
     }
 }, {
+    // timestamps: true adds createdAt and updatedAt automatically.
     timestamps: true,
     collection: 'playerdata'
 });
@@ -159,9 +149,9 @@ playerDataSchema.index({ userId: 1, authProvider: 1 }, { unique: true });
 playerDataSchema.index({ username: 1 });
 playerDataSchema.index({ lastLogin: -1 });
 
-// Pre-save middleware to update timestamps
+// Pre-save middleware to update lastSave timestamp.
+// (updatedAt is managed automatically by timestamps:true — no need to set it here.)
 playerDataSchema.pre('save', function(next) {
-    this.updatedAt = new Date();
     this.lastSave = new Date();
     next();
 });

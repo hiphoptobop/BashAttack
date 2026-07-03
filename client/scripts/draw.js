@@ -28,29 +28,30 @@ function drawObjects() {
         // drawObstacles(ctx); // Removed for Idle Clicker - no obstacles needed
         drawEntities(ctx);
 
-        // Idle Clicker specific rendering
-        // Draw monsters with health bars
-        for (var id in entities) {
-            var entity = entities[id];
-            if (entity.type === 'monster') {
-                drawMonster(ctx, entity, camera);
+        // Idle Clicker specific rendering — draw only the local player's monster.
+        // Each player owns exactly one monster (ownerId === their socket id); drawing
+        // all monsters would stack foreign monsters on top of the local one.
+        var localPlayerForMonster = entities[myID];
+        if (localPlayerForMonster) {
+            for (var id in entities) {
+                var entity = entities[id];
+                if (entity.type === 'monster' && entity.ownerId === myID) {
+                    drawMonster(ctx, entity, camera);
+                    break; // only one monster per player
+                }
             }
         }
 
-        // Draw player health bars
-        for (var id in entities) {
-            var entity = entities[id];
-            if (entity.type === 'player' && entity.health !== undefined) {
-                drawPlayerHealth(ctx, entity, camera);
-            }
+        // Draw player health bar — local player only (each player has their own
+        // isolated idle-clicker session; remote players' bars would overlap).
+        var localPlayerForHealth = entities[myID];
+        if (localPlayerForHealth && localPlayerForHealth.health !== undefined) {
+            drawPlayerHealth(ctx, localPlayerForHealth, camera);
         }
 
-        // Draw companions for all players
-        for (var id in entities) {
-            var entity = entities[id];
-            if (entity.type === 'player' && hasVisibleCompanions(entity)) {
-                drawCompanions(ctx, entity, camera);
-            }
+        // Draw companions for the local player only.
+        if (localPlayerForHealth && hasVisibleCompanions(localPlayerForHealth)) {
+            drawCompanions(ctx, localPlayerForHealth, camera);
         }
 
         drawSlashEffects(ctx);
@@ -134,19 +135,25 @@ function getPlayerAvatarImage(entity) {
 }
 
 function drawEntities(ctx) {
+    var now = Date.now();
     for (var id in entities) {
         var e = entities[id];
         if (e == null || e.x == null) { continue; }
         // Skip monsters - they're drawn separately with drawMonster()
         if (e.type === 'monster') { continue; }
+        // In idle clicker each player has their own isolated instance — only draw
+        // the local player so remote players don't stack on screen.
+        // (PvP rooms need all players rendered; idle players have a `gold` field.)
+        var localMe = entities[myID];
+        if (id !== myID && localMe && localMe.gold !== undefined) { continue; }
         var s = worldToScreen(e.x, e.y);
         var r = (e.radius + 20) * camera.zoom;  // draw larger than the physics radius
 
         var alpha = 1;
         if (e.isDead) {
             alpha = 0.25;
-        } else if (e.respawnFadeUntil && e.respawnFadeUntil > Date.now()) {
-            alpha = 1 - ((e.respawnFadeUntil - Date.now()) / 800) * 0.5;
+        } else if (e.respawnFadeUntil && e.respawnFadeUntil > now) {
+            alpha = 1 - ((e.respawnFadeUntil - now) / 800) * 0.5;
         }
 
         ctx.save();
@@ -157,18 +164,22 @@ function drawEntities(ctx) {
         var avatarImg = getPlayerAvatarImage(e);
         var playerImg = avatarImg || (typeof gameImages !== 'undefined' &&
             gameImages && gameImages.characters && gameImages.characters['Player']);
-        var imgReady = playerImg &&
-            playerImg.complete && playerImg.naturalWidth > 0;
 
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, r, 0, 2 * Math.PI);
-
-        if (imgReady) {
-            ctx.clip();
-            ctx.drawImage(playerImg, s.x - r, s.y - r, r * 2, r * 2);
+        // Animated draw — sprites.js handles the breathe/hit-pop transforms.
+        if (typeof drawAnimatedSprite !== 'undefined') {
+            drawAnimatedSprite(ctx, 'player', s.x, s.y, r, playerImg, e.color, now);
         } else {
-            ctx.fillStyle = e.color;
-            ctx.fill();
+            // Fallback if sprites.js is not loaded.
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, r, 0, 2 * Math.PI);
+            var imgReady = playerImg && playerImg.complete && playerImg.naturalWidth > 0;
+            if (imgReady) {
+                ctx.clip();
+                ctx.drawImage(playerImg, s.x - r, s.y - r, r * 2, r * 2);
+            } else {
+                ctx.fillStyle = e.color;
+                ctx.fill();
+            }
         }
 
         // Ring the local player so it's easy to tell which one you drive.
@@ -179,7 +190,7 @@ function drawEntities(ctx) {
             ctx.strokeStyle = '#fff';
             ctx.stroke();
         }
-        if (e.lastDamageAt && Date.now() - e.lastDamageAt < 150) {
+        if (e.lastDamageAt && now - e.lastDamageAt < 150) {
             ctx.beginPath();
             ctx.arc(s.x, s.y, r, 0, 2 * Math.PI);
             ctx.lineWidth = 4;
@@ -606,29 +617,34 @@ function drawCompanions(ctx, player, camera) {
     var rowScreenY = playerScreen.y + belowOffset;
 
     // Helper: draw one companion at a given screen-space position.
+    var _companionDrawNow = Date.now(); // shared timestamp for this companions pass
     function drawOne(companion, sx, sy) {
         var r = companionRadius * camera.zoom;
 
-        // Look up the character art (e.g. gameImages.characters['warrior']).
+        // Look up the character art (e.g. gameImages.characters['Warrior']).
         var typeKey = companion.type.charAt(0).toUpperCase() + companion.type.slice(1);
         var charImg = typeof gameImages !== 'undefined' &&
             gameImages && gameImages.characters && gameImages.characters[typeKey];
-        var imgReady = charImg && charImg.complete && charImg.naturalWidth > 0;
+        var fallbackColor = companionColors[companion.type] || '#888';
 
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(sx, sy, r, 0, Math.PI * 2);
-
-        if (imgReady) {
-            ctx.clip();
-            ctx.drawImage(charImg, sx - r, sy - r, r * 2, r * 2);
+        // Animated draw — sprites.js handles per-type personality animations.
+        if (typeof drawAnimatedSprite !== 'undefined') {
+            drawAnimatedSprite(ctx, companion.type, sx, sy, r, charImg, fallbackColor, _companionDrawNow);
         } else {
-            // Fallback: coloured circle while image is loading or missing.
-            ctx.fillStyle = companionColors[companion.type] || '#888';
-            ctx.fill();
+            // Fallback if sprites.js is not loaded.
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(sx, sy, r, 0, Math.PI * 2);
+            var imgReady = charImg && charImg.complete && charImg.naturalWidth > 0;
+            if (imgReady) {
+                ctx.clip();
+                ctx.drawImage(charImg, sx - r, sy - r, r * 2, r * 2);
+            } else {
+                ctx.fillStyle = fallbackColor;
+                ctx.fill();
+            }
+            ctx.restore();
         }
-
-        ctx.restore();
 
         // Ring around every companion.
         ctx.beginPath();

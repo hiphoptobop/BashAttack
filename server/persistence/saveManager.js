@@ -91,12 +91,12 @@ async function savePlayerData(player, userId, authProvider, force = false) {
     activeSaves.set(saveKey, true);
 
     try {
-        const playerData = await PlayerData.findOne({ userId, authProvider });
-        
+        // Find or create — first save for a new player must not be silently dropped.
+        let playerData = await PlayerData.findOne({ userId, authProvider });
         if (!playerData) {
-            console.log(`SaveManager: No player data found for ${saveKey}, cannot save`);
-            activeSaves.delete(saveKey);
-            return false;
+            // Create a minimal document; username defaults to userId until the auth
+            // layer updates it via findOrCreate on the next login.
+            playerData = new PlayerData({ userId, authProvider, username: userId });
         }
 
         // Update player data from entity

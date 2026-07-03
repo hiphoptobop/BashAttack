@@ -99,6 +99,10 @@ function registerHandlers(server) {
         if (typeof monsterShake !== 'undefined') {
             monsterShake.until = Date.now() + 300;
         }
+        // Trigger player hit-pop animation for the local player.
+        if (data.playerId === myID && typeof notifyPlayerHit !== 'undefined') {
+            notifyPlayerHit();
+        }
         // Store combat event for rendering
         if (!combatEvents) combatEvents = [];
         combatEvents.push({
@@ -144,6 +148,10 @@ function registerHandlers(server) {
 
     // Idle Clicker: Companion attack visual event
     server.on('companionAttack', function(data) {
+        // Trigger companion attack-lunge animation in sprites.js.
+        if (typeof notifyCompanionAttack !== 'undefined') {
+            notifyCompanionAttack(data.companionType);
+        }
         var player = entities[myID];
         if (!player || typeof companionEffects === 'undefined') { return; }
 
