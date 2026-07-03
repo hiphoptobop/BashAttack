@@ -85,13 +85,17 @@ function boot() {
     });
 }
 
-// Size the canvas backing store for the device pixel ratio so rendering is crisp
-// on HiDPI displays, while we keep drawing in logical (viewW × viewH) coordinates.
+// Size the canvas to fill whatever screen it's on, then update camera.viewW/viewH
+// so all world→screen math (worldToScreen, cameraFollow) uses the real dimensions.
+// The backing store is scaled by devicePixelRatio for sharp HiDPI rendering while
+// the draw code keeps working in logical CSS pixels.
 function resize() {
     dpr = window.devicePixelRatio || 1;
-    gameCanvas.width = camera.viewW * dpr;
+    camera.viewW = window.innerWidth;
+    camera.viewH = window.innerHeight;
+    gameCanvas.width  = camera.viewW * dpr;
     gameCanvas.height = camera.viewH * dpr;
-    gameCanvas.style.width = camera.viewW + 'px';
+    gameCanvas.style.width  = camera.viewW + 'px';
     gameCanvas.style.height = camera.viewH + 'px';
 }
 

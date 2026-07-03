@@ -1,107 +1,87 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Idle Clicker Game</title>
     <style>
-        body {
+        * { box-sizing: border-box; }
+        html, body {
             margin: 0;
             padding: 0;
-            overflow: hidden;
+            width: 100%;
+            height: 100%;
             background: #222;
             font-family: Arial, sans-serif;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
+            overflow: hidden;
         }
+        /* ── Canvas fills the full viewport ── */
         #gameCanvas {
             display: block;
-            background: #333;
-            margin: 0 auto;
-            border: 1px solid #000;
-            box-shadow: 0 0 24px rgba(0,0,0,0.35);
-            cursor: crosshair;
-        }
-        #controls {
-            position: absolute;
-            right: 10px;
-            top: 10px;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 15px;
-            border-radius: 5px;
-            color: #fff;
-            width: 250px;
-        }
-        button {
+            position: fixed;
+            top: 0; left: 0;
             width: 100%;
-            padding: 10px;
-            margin: 5px 0;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 14px;
+            height: 100%;
+            background: #333;
+            cursor: crosshair;
+            touch-action: none; /* prevent scroll/zoom on touch */
         }
-        button:hover {
-            background: #45a049;
+        /* ── All overlays sit above the canvas ── */
+        #statsPanel, #controls, #helpButton, #rankingsButton, #pvpButton {
+            position: fixed;
+            z-index: 100;
         }
-        button:disabled {
-            background: #666;
-            cursor: not-allowed;
+        /* ── Stats panel — top-left ── */
+        #statsPanel {
+            top: 8px;
+            left: 8px;
+            background: rgba(0, 0, 0, 0.80);
+            padding: 10px 14px;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 13px;
+            line-height: 1.55;
+            max-width: 46vw; /* never wider than half screen on portrait phones */
         }
-        .section {
-            margin: 15px 0;
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
-        }
-        .section h3 {
-            margin: 0 0 10px 0;
-            font-size: 16px;
-        }
-        .skill-btn {
-            background: #2196F3;
-        }
-        .skill-btn:hover {
-            background: #0b7dda;
-        }
+        #statsPanel .stat-line { margin: 3px 0; font-weight: 500; }
+        #statsPanel .stat-label { color: #aaa; font-weight: 400; }
+        #statsPanel .stat-value { color: #fff; font-weight: 600; }
+        #statsPanel .monster-level { color: #ffcc00; }
+        #statsPanel .attack-ready { color: #66ff99; }
+        #statsPanel .attack-cooldown { color: #ffcc00; }
+        /* ── Help button — top-right of canvas area ── */
         #helpButton {
-            position: absolute;
-            top: 10px;
-            right: 280px;
-            width: 40px;
-            height: 40px;
-            font-size: 24px;
+            top: 8px;
+            right: 8px;
+            width: 36px;
+            height: 36px;
+            font-size: 20px;
             background: #4CAF50;
             color: white;
             border: none;
             border-radius: 50%;
             cursor: pointer;
-            z-index: 1000;
             font-weight: bold;
+            padding: 0;
+            width: 36px; /* override generic button rule */
         }
-        #helpButton:hover {
-            background: #45a049;
-        }
+        #helpButton:hover { background: #45a049; }
+        /* ── Action buttons row — just below help button ── */
         #rankingsButton {
-            position: absolute;
-            top: 60px;
-            right: 460px;
+            top: 52px;
+            right: 8px;
             width: auto;
-            min-width: 150px;
-            height: 40px;
-            padding: 0 15px;
-            font-size: 14px;
+            min-width: 120px;
+            height: 36px;
+            padding: 0 12px;
+            font-size: 13px;
             background: linear-gradient(135deg, #7c5cd8 0%, #6344c0 100%);
             color: white;
             border: 2px solid #5b3fa8;
             border-radius: 20px;
             cursor: pointer;
-            z-index: 1000;
             font-weight: bold;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s ease;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.3);
             text-decoration: none;
             display: inline-flex;
             align-items: center;
@@ -109,37 +89,89 @@
         }
         #rankingsButton:hover {
             background: linear-gradient(135deg, #6344c0 0%, #4e35a8 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4);
         }
         #pvpButton {
-            position: absolute;
-            top: 60px;
-            right: 280px;
+            top: 96px;
+            right: 8px;
             width: auto;
-            min-width: 160px;
-            height: 40px;
-            padding: 0 15px;
-            font-size: 14px;
+            min-width: 120px;
+            height: 36px;
+            padding: 0 12px;
+            font-size: 13px;
             background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
             color: white;
             border: 2px solid #ff4757;
             border-radius: 20px;
             cursor: pointer;
-            z-index: 1000;
             font-weight: bold;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s ease;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.3);
         }
         #pvpButton:hover {
             background: linear-gradient(135deg, #ff5252 0%, #e84a5f 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4);
         }
         #pvpButton:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
         }
+        /* ── Controls panel — bottom drawer on mobile, right panel on desktop ── */
+        #controls {
+            background: rgba(0, 0, 0, 0.85);
+            padding: 12px;
+            border-radius: 8px 8px 0 0;
+            color: #fff;
+            /* Mobile: full-width drawer anchored to bottom */
+            bottom: 0;
+            left: 0;
+            right: 0;
+            max-height: 38vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        /* On wider screens restore the right-side floating panel */
+        @media (min-width: 600px) {
+            #controls {
+                top: 8px;
+                right: 8px;
+                bottom: auto;
+                left: auto;
+                width: 230px;
+                max-height: calc(100vh - 16px);
+                border-radius: 8px;
+            }
+            #rankingsButton { right: 248px; top: 52px; }
+            #pvpButton      { right: 248px; top: 96px; }
+            #helpButton     { right: 248px; top: 8px;  }
+        }
+        /* Generic button base (applies inside #controls) */
+        #controls button {
+            width: 100%;
+            padding: 8px;
+            margin: 4px 0;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        #controls button:hover { background: #45a049; }
+        #controls button:disabled { background: #666; cursor: not-allowed; }
+        /* Two-column grid for buttons on wider phones (landscape) */
+        @media (min-width: 400px) and (max-width: 599px) {
+            .section .btn-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 4px;
+            }
+        }
+        .section {
+            margin: 10px 0;
+            padding: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+        }
+        .section h3 { margin: 0 0 8px 0; font-size: 14px; }
+        .skill-btn { background: #2196F3 !important; }
+        .skill-btn:hover { background: #0b7dda !important; }
         #helpModal {
             display: none;
             position: fixed;
@@ -258,20 +290,24 @@
         
         <div class="section">
             <h3>Companions</h3>
-            <button id="btn-warrior" onclick="buyCompanion('warrior')">Warrior (20g)</button>
-            <button id="btn-archer" onclick="buyCompanion('archer')">Archer (100g)</button>
-            <button id="btn-mage" onclick="buyCompanion('mage')">Mage (400g)</button>
-            <button id="btn-priest" onclick="buyCompanion('priest')">Priest (1000g)</button>
+            <div class="btn-grid">
+                <button id="btn-warrior" onclick="buyCompanion('warrior')">Warrior (20g)</button>
+                <button id="btn-archer" onclick="buyCompanion('archer')">Archer (100g)</button>
+                <button id="btn-mage" onclick="buyCompanion('mage')">Mage (400g)</button>
+                <button id="btn-priest" onclick="buyCompanion('priest')">Priest (1000g)</button>
+            </div>
         </div>
         
         <div class="section">
             <h3>Power-Ups</h3>
-            <button class="skill-btn" id="skill-maxHealth" onclick="upgradeSkill('maxHealth')">Vitality (Lv 0) - 1 PuP</button>
-            <button class="skill-btn" id="skill-attackPower" onclick="upgradeSkill('attackPower')">Strength (Lv 0) - 1 PuP</button>
-            <button class="skill-btn" id="skill-clickDamage" onclick="upgradeSkill('clickDamage')">Precision (Lv 0) - 2 PuP</button>
-            <button class="skill-btn" id="skill-companionDamage" onclick="upgradeSkill('companionDamage')">Leadership (Lv 0) - 2 PuP</button>
-            <button class="skill-btn" id="skill-goldMultiplier" onclick="upgradeSkill('goldMultiplier')">Fortune (Lv 0) - 2 PuP</button>
-            <button class="skill-btn" id="skill-healthRegen" onclick="upgradeSkill('healthRegen')">Regen (Lv 0) - 2 PuP</button>
+            <div class="btn-grid">
+                <button class="skill-btn" id="skill-maxHealth" onclick="upgradeSkill('maxHealth')">Vitality (Lv 0) - 1 PuP</button>
+                <button class="skill-btn" id="skill-attackPower" onclick="upgradeSkill('attackPower')">Strength (Lv 0) - 1 PuP</button>
+                <button class="skill-btn" id="skill-clickDamage" onclick="upgradeSkill('clickDamage')">Precision (Lv 0) - 2 PuP</button>
+                <button class="skill-btn" id="skill-companionDamage" onclick="upgradeSkill('companionDamage')">Leadership (Lv 0) - 2 PuP</button>
+                <button class="skill-btn" id="skill-goldMultiplier" onclick="upgradeSkill('goldMultiplier')">Fortune (Lv 0) - 2 PuP</button>
+                <button class="skill-btn" id="skill-healthRegen" onclick="upgradeSkill('healthRegen')">Regen (Lv 0) - 2 PuP</button>
+            </div>
         </div>
     </div>
 
