@@ -2,78 +2,106 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Multiplayer Engine Skeleton</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PvP Arena</title>
     <style>
+        * { box-sizing: border-box; }
         html, body { margin: 0; height: 100%; background: #14141a; color: #ddd;
             font-family: system-ui, sans-serif; overflow: hidden; }
-        #wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 12px; min-height: 100vh; }
-        #gameCanvas { background: #20202a; border: 1px solid #000; cursor: crosshair; box-shadow: 0 0 24px rgba(0,0,0,0.35); display: block; margin: 0 auto; }
-        #hint { font-size: 13px; opacity: 0.85; max-width: 1200px; text-align: center; }
-        #rankingsButton {
-            position: absolute;
-            top: 60px;
-            right: 200px;
-            width: auto;
-            min-width: 140px;
-            height: 40px;
-            padding: 0 15px;
-            font-size: 14px;
-            background: linear-gradient(135deg, #7c5cd8 0%, #6344c0 100%);
-            color: white;
-            border: 2px solid #5b3fa8;
+        #gameCanvas {
+            display: block;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: #20202a;
+            cursor: crosshair;
+            touch-action: none;
+        }
+        /* Hint bar hidden on mobile — not useful without keyboard */
+        #hint { position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%);
+            font-size: 12px; opacity: 0.7; white-space: nowrap; z-index: 200;
+            pointer-events: none; }
+        @media (hover: none) { #hint { display: none; } }
+
+        /* Top-right HUD buttons */
+        #rankingsButton, #exitPvpButton {
+            position: fixed;
+            z-index: 500;
+            font-weight: bold;
             border-radius: 20px;
             cursor: pointer;
-            z-index: 1000;
-            font-weight: bold;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s ease;
-            text-decoration: none;
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            text-decoration: none;
         }
-        #rankingsButton:hover {
-            background: linear-gradient(135deg, #6344c0 0%, #4e35a8 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4);
+        #rankingsButton {
+            top: 8px; right: 8px;
+            min-width: 120px; height: 36px; padding: 0 12px;
+            font-size: 13px;
+            background: linear-gradient(135deg, #7c5cd8 0%, #6344c0 100%);
+            color: white; border: 2px solid #5b3fa8;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.3);
         }
+        #rankingsButton:hover { background: linear-gradient(135deg, #6344c0 0%, #4e35a8 100%); }
         #exitPvpButton {
-            position: absolute;
-            top: 60px;
-            right: 20px;
-            width: auto;
-            min-width: 160px;
-            height: 40px;
-            padding: 0 15px;
-            font-size: 14px;
+            top: 52px; right: 8px;
+            min-width: 120px; height: 36px; padding: 0 12px;
+            font-size: 13px;
             background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-            color: white;
-            border: 2px solid #388E3C;
-            border-radius: 20px;
-            cursor: pointer;
-            z-index: 1000;
-            font-weight: bold;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s ease;
+            color: white; border: 2px solid #388E3C;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.3);
         }
-        #exitPvpButton:hover {
-            background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4);
+        #exitPvpButton:hover { background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%); }
+        #exitPvpButton:active { box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+
+        /* ── Virtual joystick — only shown on touch devices ── */
+        #joystick-zone {
+            display: none; /* hidden by default; shown only on touch screens */
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            width: 120px;
+            height: 120px;
+            z-index: 400;
+            touch-action: none;
+            user-select: none;
         }
-        #exitPvpButton:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        /* Show joystick only when device has a coarse (touch) pointer */
+        @media (pointer: coarse) {
+            #joystick-zone { display: block; }
+        }
+        #joystick-base {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.12);
+            border: 2px solid rgba(255, 255, 255, 0.30);
+        }
+        #joystick-knob {
+            position: absolute;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.55);
+            border: 2px solid rgba(255, 255, 255, 0.80);
+            /* centred inside the base */
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
         }
     </style>
 </head>
 <body>
-    <div id="wrap">
-        <div id="hint">Move with <b>WASD</b> / <b>arrows</b>. In arena PvP, <b>hover near an enemy</b> to preview attack range and <b>click near a player</b> to attack. Health bars, kill feed, cooldown state, and respawn overlay are rendered on the canvas.</div>
-        <a id="rankingsButton" href="rankings.html" target="_blank" rel="noopener" title="View weekly PvP leaderboards">🏆 Rankings</a>
-        <button id="exitPvpButton" onclick="exitPvPArena()" title="Return to IdleClicker - Your stats will be preserved">🏠 Return to IdleClicker</button>
-        <canvas id="gameCanvas" width="1200" height="800"></canvas>
+    <canvas id="gameCanvas"></canvas>
+    <div id="hint">Move with <b>WASD</b> / <b>arrows</b> · Click near a player to attack</div>
+    <a id="rankingsButton" href="rankings.html" target="_blank" rel="noopener">🏆 Rankings</a>
+    <button id="exitPvpButton" onclick="exitPvPArena()">🏠 Return to IdleClicker</button>
+
+    <!-- Virtual joystick (touch only) -->
+    <div id="joystick-zone">
+        <div id="joystick-base"></div>
+        <div id="joystick-knob"></div>
     </div>
 
     <!-- Socket.IO client, served by the Socket.IO server on the same port. -->
@@ -197,7 +225,88 @@
         // so play.html controls the timing — matching the same pattern as idleclicker.html.
         window.addEventListener('load', function () {
             boot();
+            initJoystick();
         });
+
+        // ── Virtual joystick ────────────────────────────────────────────────────
+        // Sets the same four movement globals (moveForward, moveBackward, turnLeft,
+        // turnRight) that keyboard input.js uses, so prediction + server input work
+        // identically. The joystick is a 120×120px zone; the knob follows the finger
+        // up to a 44px radius and snaps back to centre on release.
+        function initJoystick() {
+            var zone  = document.getElementById('joystick-zone');
+            var knob  = document.getElementById('joystick-knob');
+            if (!zone || !knob) { return; }
+
+            var RADIUS   = 44;   // max knob travel (px) from centre
+            var DEADZONE = 0.20; // fraction of radius — ignore tiny drifts
+            var active   = false;
+            var startX   = 0, startY = 0;
+
+            // Centre of the zone in page coords (recomputed on each touch start
+            // so it works after layout shifts / orientation changes).
+            function zoneCenter() {
+                var r = zone.getBoundingClientRect();
+                return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+            }
+
+            function clearFlags() {
+                moveForward = false; moveBackward = false;
+                turnLeft    = false; turnRight    = false;
+            }
+
+            function updateFromDelta(dx, dy) {
+                var dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < RADIUS * DEADZONE) {
+                    clearFlags();
+                    return;
+                }
+                // Clamp knob travel to RADIUS.
+                var scale = Math.min(dist, RADIUS) / dist;
+                var nx = dx * scale, ny = dy * scale;
+
+                // Clamp knob visual position.
+                knob.style.transform =
+                    'translate(calc(-50% + ' + nx + 'px), calc(-50% + ' + ny + 'px))';
+
+                // Map to the four directional booleans (8-way via threshold).
+                // Diagonal when both axes exceed 40% of clamped dist.
+                var threshold = 0.4 * Math.min(dist, RADIUS);
+                moveForward  = ny < -threshold;
+                moveBackward = ny >  threshold;
+                turnLeft     = nx < -threshold;
+                turnRight    = nx >  threshold;
+            }
+
+            zone.addEventListener('touchstart', function (e) {
+                e.preventDefault(); // stop the touch reaching the canvas (no attack fire)
+                e.stopPropagation();
+                active = true;
+                var c   = zoneCenter();
+                var t   = e.changedTouches[0];
+                startX = c.x; startY = c.y;
+                updateFromDelta(t.clientX - startX, t.clientY - startY);
+            }, { passive: false });
+
+            zone.addEventListener('touchmove', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!active) { return; }
+                var t = e.changedTouches[0];
+                updateFromDelta(t.clientX - startX, t.clientY - startY);
+            }, { passive: false });
+
+            function onTouchEnd(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                active = false;
+                clearFlags();
+                knob.style.transform = 'translate(-50%, -50%)';
+            }
+            zone.addEventListener('touchend',    onTouchEnd, { passive: false });
+            zone.addEventListener('touchcancel', onTouchEnd, { passive: false });
+        }
+        // ────────────────────────────────────────────────────────────────────────
     </script>
 </body>
 </html>
