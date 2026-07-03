@@ -514,7 +514,7 @@
             return Math.floor(baseData.baseCost * Math.pow(1.5, currentLevel));
         }
         
-        // Update companion button displays with current costs
+        // Update companion button displays with current costs and affordability.
         function updateCompanionButtons() {
             if (!entities[myID]) return;
             
@@ -525,15 +525,14 @@
                 priest: { baseCost: 1000 }
             };
             
-            console.log('Updating companion buttons, companions:', entities[myID]?.companions);
-            
-            var companions = entities[myID] && entities[myID].companions;
+            var player = entities[myID];
+            var gold = player.gold || 0;
+            var companions = player.companions;
             for (const [id, data] of Object.entries(companionData)) {
                 const cost = getCompanionCost(id, data);
                 const btn = document.getElementById(`btn-${id}`);
                 if (btn) {
                     const name = id.charAt(0).toUpperCase() + id.slice(1);
-                    // Find current level for this companion type
                     var currentLevel = 0;
                     if (Array.isArray(companions)) {
                         for (var i = 0; i < companions.length; i++) {
@@ -548,19 +547,18 @@
                     } else {
                         btn.textContent = `${name} (${cost}g)`;
                     }
+                    // Grey out when the player can't afford it.
+                    btn.disabled = (gold < cost);
                 }
             }
         }
         
         // Update power-up button displays
         function updateSkillButtons() {
-            // Get local player
             if (typeof entities === 'undefined' || typeof myID === 'undefined') return;
             var localPlayer = entities[myID];
             if (!localPlayer || !localPlayer.skillTree) return;
-            
-            console.log('Updating skill buttons, skillTree:', localPlayer.skillTree, 'skillPoints:', localPlayer.skillPoints);
-            
+
             // Update each power-up button
             for (var skillId in SKILL_DEFINITIONS) {
                 var skillDef = SKILL_DEFINITIONS[skillId];
