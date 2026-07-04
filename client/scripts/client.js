@@ -95,8 +95,8 @@ function registerHandlers(server) {
 
     // Idle Clicker: Combat event
     server.on('combatEvent', function(data) {
-        // Trigger monster shake on every hit
-        if (typeof monsterShake !== 'undefined') {
+        // Trigger monster shake only when the LOCAL player lands a hit
+        if (data.playerId === myID && typeof monsterShake !== 'undefined') {
             monsterShake.until = Date.now() + 300;
         }
         // Trigger player hit-pop animation for the local player.
