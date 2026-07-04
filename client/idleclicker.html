@@ -31,14 +31,14 @@
            Stats top-left, controls right panel,
            action buttons left of controls panel.
         ════════════════════════════════════════════════ */
-        #statsPanel, #controls, #helpButton, #rankingsButton, #pvpButton, #mobileMenuBtn {
+        #statsPanel, #controls, #helpButton, #rankingsButton, #pvpButton, #mobileMenuBtn, #accountButton {
             position: fixed;
             z-index: 100;
         }
 
-        /* Stats panel — top-left, desktop */
+        /* Stats panel — desktop: pushed down to clear account button */
         #statsPanel {
-            top: 8px; left: 8px;
+            top: 48px; left: 8px;
             background: rgba(0,0,0,0.80);
             padding: 10px 14px;
             border-radius: 8px;
@@ -52,6 +52,22 @@
         #statsPanel .monster-level  { color: #ffcc00; }
         #statsPanel .attack-ready   { color: #66ff99; }
         #statsPanel .attack-cooldown{ color: #ffcc00; }
+
+        /* Account button — top-left, sits above stats panel */
+        #accountButton {
+            top: 8px; left: 8px;
+            height: 32px;
+            padding: 0 12px;
+            font-size: 12px; font-weight: bold;
+            background: rgba(88,101,242,0.85);
+            color: white;
+            border: 1px solid #5865F2;
+            border-radius: 16px;
+            cursor: pointer;
+            display: inline-flex; align-items: center; gap: 6px;
+            white-space: nowrap;
+        }
+        #accountButton:hover { background: rgba(88,101,242,1); }
 
         /* Help button */
         #helpButton {
@@ -147,9 +163,21 @@
         ════════════════════════════════════════════════ */
         @media (max-width: 599px) {
 
-            /* ── Top stats bar ── */
-            #statsPanel {
+            /* Account button on mobile — full-width bar at very top */
+            #accountButton {
                 top: 0; left: 0; right: 0;
+                width: 100%; height: 30px;
+                border-radius: 0;
+                border: none;
+                border-bottom: 1px solid rgba(88,101,242,0.4);
+                font-size: 11px;
+                justify-content: center;
+                background: rgba(88,101,242,0.75);
+            }
+
+            /* ── Top stats bar — sits below account button ── */
+            #statsPanel {
+                top: 30px; left: 0; right: 0;
                 width: 100%;
                 border-radius: 0;
                 padding: 5px 8px;
@@ -247,6 +275,53 @@
             #controls button { font-size: 12px; padding: 7px 4px; }
         }
 
+        /* ── Account modal ── */
+        #accountModal {
+            display: none;
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.75);
+            z-index: 3000;
+            align-items: center; justify-content: center;
+        }
+        #accountModal.open { display: flex; }
+        #accountModalContent {
+            background: #1a1a2e;
+            border: 1px solid #5865F2;
+            border-radius: 14px;
+            padding: 32px 28px;
+            width: 100%; max-width: 340px;
+            text-align: center;
+            color: #fff;
+            position: relative;
+        }
+        #accountModalContent h2 { margin: 0 0 6px; font-size: 1.2em; color: #fff; }
+        #accountModalContent .sub { color: #a8a8b3; font-size: 0.85em; margin-bottom: 24px; }
+        #accountModal .close-btn {
+            position: absolute; top: 12px; right: 14px;
+            background: none; border: none; color: #a8a8b3;
+            font-size: 22px; cursor: pointer; line-height: 1;
+        }
+        #accountModal .close-btn:hover { color: #fff; }
+        .discord-login-btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            gap: 10px; width: 100%; padding: 13px;
+            background: #5865F2; color: #fff;
+            border: none; border-radius: 8px;
+            font-size: 1em; font-weight: 700; cursor: pointer;
+            text-decoration: none;
+        }
+        .discord-login-btn:hover { background: #4752c4; }
+        .account-logged-in { color: #a8a8b3; font-size: 0.9em; line-height: 1.6; }
+        .account-logged-in strong { color: #fff; font-size: 1.05em; }
+        .account-provider-badge {
+            display: inline-block; margin-top: 6px;
+            padding: 3px 10px; border-radius: 12px;
+            font-size: 0.78em; font-weight: 700;
+            background: #5865F2; color: #fff;
+        }
+        .account-logged-in .note { margin-top: 14px; font-size: 0.8em; color: #57606a; }
+
         /* ── Help modal (shared) ── */
         #helpModal {
             display: none;
@@ -288,6 +363,27 @@
         <div class="stat-line" id="chip-atk"><span class="stat-label">ATK: </span><span class="stat-value" id="stat-attack">0</span></div>
         <div class="stat-line monster-level" id="chip-lvl"><span class="stat-label">Lvl: </span><span class="stat-value" id="stat-monster-level">1</span></div>
         <div class="stat-line" id="chip-kd"><span class="stat-label">K/D: </span><span class="stat-value" id="stat-pvp-kd">0/0</span></div>
+    </div>
+
+    <!-- Account button (both desktop + mobile) -->
+    <button id="accountButton" onclick="toggleAccountModal()">👤 Account</button>
+
+    <!-- Account modal -->
+    <div id="accountModal">
+        <div id="accountModalContent">
+            <button class="close-btn" onclick="toggleAccountModal()">×</button>
+            <h2>⚔️ BashAttack Account</h2>
+            <p class="sub">Log in to save your progress across sessions</p>
+            <div id="accountModalBody">
+                <!-- Filled by checkAccountStatus() -->
+                <a href="/auth/discord" class="discord-login-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+                    </svg>
+                    Login with Discord
+                </a>
+            </div>
+        </div>
     </div>
 
     <!-- Desktop action buttons (hidden on mobile, shown in drawer instead) -->
@@ -683,6 +779,36 @@
             }
         }
         
+        // Account modal
+        function toggleAccountModal() {
+            document.getElementById('accountModal').classList.toggle('open');
+        }
+
+        // Check auth status and update modal body accordingly
+        async function checkAccountStatus() {
+            try {
+                var res  = await fetch('/api/auth/status');
+                var data = await res.json();
+                var body = document.getElementById('accountModalBody');
+                var btn  = document.getElementById('accountButton');
+                if (data.authenticated) {
+                    // Update button label to show username
+                    btn.textContent = '👤 ' + data.user.username;
+                    // Show logged-in state in modal
+                    body.innerHTML =
+                        '<div class="account-logged-in">' +
+                        '  <div>Logged in as</div>' +
+                        '  <strong>' + data.user.username + '</strong><br>' +
+                        '  <span class="account-provider-badge">' + data.user.authProvider + '</span>' +
+                        '  <p class="note">Your progress is saved automatically.<br>Close this to keep playing.</p>' +
+                        '</div>';
+                }
+                // If not authenticated, default Discord login button is already in the HTML
+            } catch (e) {
+                console.warn('Could not fetch auth status:', e);
+            }
+        }
+
         // Help modal toggle function
         function toggleHelpModal() {
             const modal = document.getElementById('helpModal');
@@ -754,7 +880,15 @@
         // Start the game when page loads
         window.addEventListener('load', function() {
             console.log('Idle Clicker game starting...');
-            
+
+            // Check auth status — updates account button label and modal body
+            checkAccountStatus();
+
+            // Close account modal when clicking the backdrop
+            document.getElementById('accountModal').addEventListener('click', function(e) {
+                if (e.target === this) { toggleAccountModal(); }
+            });
+
             // Start loading images in the background (non-blocking)
             console.log('Loading game images in background...');
             preloadGameImages(function() {
