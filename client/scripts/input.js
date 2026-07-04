@@ -8,9 +8,13 @@
 
 window.addEventListener('keydown', onKey(true), false);
 window.addEventListener('keyup', onKey(false), false);
-gameCanvas.addEventListener('click', onCanvasClick, false);
-gameCanvas.addEventListener('mousemove', onCanvasMove, false);
-gameCanvas.addEventListener('mouseleave', onCanvasLeave, false);
+gameCanvas.addEventListener('click',      onCanvasClick,  false);
+gameCanvas.addEventListener('mousemove',  onCanvasMove,   false);
+gameCanvas.addEventListener('mouseleave', onCanvasLeave,  false);
+// Touch attack — fires on touchend so it doesn't conflict with the joystick's
+// touchstart and doesn't block scrolling. Uses a wider hit radius than mouse
+// because a finger tap is far less precise than a cursor click.
+gameCanvas.addEventListener('touchend', onCanvasTouchEnd, { passive: true });
 
 function keyToAction(e) {
     switch (e.code) {
@@ -90,6 +94,26 @@ function onCanvasMove(e) {
 
 function onCanvasLeave() {
     pvpEffects.hoveredTargetId = null;
+}
+
+function onCanvasTouchEnd(e) {
+    if (!server || !myID) { return; }
+    // Use the first changed touch (the finger that just lifted).
+    var touch = e.changedTouches && e.changedTouches[0];
+    if (!touch) { return; }
+    var rect = gameCanvas.getBoundingClientRect();
+    var touchX = touch.clientX - rect.left;
+    var touchY = touch.clientY - rect.top;
+    var worldPos = screenToWorld(touchX, touchY);
+    // Wider radius than mouse (120 vs 50) — fingers are imprecise.
+    var target = getNearestAttackablePlayer(worldPos.x, worldPos.y, 120);
+    if (!target) { return; }
+    pvpEffects.attackFlashUntil = Date.now() + 120;
+    server.emit('pvpAttack', {
+        targetId: target.id,
+        clickX: Math.round(worldPos.x),
+        clickY: Math.round(worldPos.y)
+    });
 }
 
 // Be a good citizen: tell the server we're leaving so the room frees our slot
