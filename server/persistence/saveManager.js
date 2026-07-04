@@ -4,7 +4,9 @@
 const PlayerData = require('../database/models/PlayerData');
 const { isDbConnected } = require('../database/connection');
 
-// Track active save operations to prevent race conditions
+// Track active save operations to prevent race conditions.
+// Values are Promises (not booleans) so loadPlayerData can await them before reading,
+// preventing the refresh race where a disconnect-save and reconnect-load overlap.
 const activeSaves = new Map();
 
 // Track last save times to implement throttling
@@ -22,6 +24,15 @@ async function loadPlayerData(player, userId, authProvider) {
     if (!isDbConnected()) {
         console.log('SaveManager: Database not connected, skipping load');
         return false;
+    }
+
+    // If a save is in progress for this player (e.g. a disconnect-save racing with a
+    // refresh reconnect), wait for it to finish before reading so we get fresh data.
+    const saveKey = `${authProvider}:${userId}`;
+    const pendingSave = activeSaves.get(saveKey);
+    if (pendingSave) {
+        console.log(`SaveManager: Waiting for in-progress save before loading ${saveKey}`);
+        await pendingSave;
     }
 
     try {
@@ -87,40 +98,41 @@ async function savePlayerData(player, userId, authProvider, force = false) {
         }
     }
 
-    // Mark save as in progress
-    activeSaves.set(saveKey, true);
+    // Store the save Promise so loadPlayerData can await it if a load races in.
+    const savePromise = (async () => {
+        try {
+            // Find or create — first save for a new player must not be silently dropped.
+            let playerData = await PlayerData.findOne({ userId, authProvider });
+            if (!playerData) {
+                // Create a minimal document; username defaults to userId until the auth
+                // layer updates it via findOrCreate on the next login.
+                playerData = new PlayerData({ userId, authProvider, username: userId });
+            }
 
-    try {
-        // Find or create — first save for a new player must not be silently dropped.
-        let playerData = await PlayerData.findOne({ userId, authProvider });
-        if (!playerData) {
-            // Create a minimal document; username defaults to userId until the auth
-            // layer updates it via findOrCreate on the next login.
-            playerData = new PlayerData({ userId, authProvider, username: userId });
-        }
+            // Update player data from entity
+            playerData.updateFromPlayer(player);
+            
+            // Validate data before saving
+            if (!validatePlayerData(playerData)) {
+                console.error('SaveManager: Invalid player data, save aborted');
+                return false;
+            }
 
-        // Update player data from entity
-        playerData.updateFromPlayer(player);
-        
-        // Validate data before saving
-        if (!validatePlayerData(playerData)) {
-            console.error('SaveManager: Invalid player data, save aborted');
-            activeSaves.delete(saveKey);
+            await playerData.save();
+            
+            lastSaveTimes.set(saveKey, Date.now());
+            console.log(`SaveManager: Saved data for ${playerData.username} - Tier ${player.tier}, Gold ${player.gold}`);
+            return true;
+        } catch (error) {
+            console.error('SaveManager: Error saving player data:', error);
             return false;
+        } finally {
+            activeSaves.delete(saveKey);
         }
+    })();
 
-        await playerData.save();
-        
-        lastSaveTimes.set(saveKey, Date.now());
-        activeSaves.delete(saveKey);
-        
-        console.log(`SaveManager: Saved data for ${playerData.username} - Tier ${player.tier}, Gold ${player.gold}`);
-        return true;
-    } catch (error) {
-        console.error('SaveManager: Error saving player data:', error);
-        activeSaves.delete(saveKey);
-        return false;
-    }
+    activeSaves.set(saveKey, savePromise);
+    return savePromise;
 }
 
 /**

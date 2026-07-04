@@ -152,10 +152,8 @@ app.get('/api/auth/status', function(req, res) {
 const pvpRankingsRouter = require('./server/routes/pvpRankings');
 app.use('/api/pvp/rankings', pvpRankingsRouter);
 
-// Protect game routes (optional - can be disabled for development)
-if (process.env.NODE_ENV === 'production') {
-    app.get('/idleclicker.html', authMiddleware.requireAuth);
-}
+// Protect game routes — require login to play
+app.get('/idleclicker.html', authMiddleware.requireAuth);
 
 // The server sleeps while empty: no clients means nothing to simulate, so the
 // tick loop isn't even scheduled. The first connection wakes it; the last

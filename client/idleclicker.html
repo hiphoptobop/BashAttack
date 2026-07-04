@@ -7,286 +7,302 @@
     <style>
         * { box-sizing: border-box; }
         html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
             background: #222;
             font-family: Arial, sans-serif;
             overflow: hidden;
         }
+
         /* ── Canvas fills the full viewport ── */
         #gameCanvas {
             display: block;
             position: fixed;
             top: 0; left: 0;
-            width: 100%;
-            height: 100%;
+            width: 100%; height: 100%;
             background: #333;
             cursor: crosshair;
-            touch-action: none; /* prevent scroll/zoom on touch */
+            touch-action: none;
         }
-        /* ── All overlays sit above the canvas ── */
-        #statsPanel, #controls, #helpButton, #rankingsButton, #pvpButton {
+
+        /* ════════════════════════════════════════════════
+           DESKTOP LAYOUT  (≥ 600 px)
+           All overlays sit above the canvas.
+           Stats top-left, controls right panel,
+           action buttons left of controls panel.
+        ════════════════════════════════════════════════ */
+        #statsPanel, #controls, #helpButton, #rankingsButton, #pvpButton, #mobileMenuBtn {
             position: fixed;
             z-index: 100;
         }
-        /* ── Stats panel — top-left ── */
+
+        /* Stats panel — top-left, desktop */
         #statsPanel {
-            top: 8px;
-            left: 8px;
-            background: rgba(0, 0, 0, 0.80);
+            top: 8px; left: 8px;
+            background: rgba(0,0,0,0.80);
             padding: 10px 14px;
             border-radius: 8px;
             color: #fff;
             font-size: 13px;
             line-height: 1.55;
-            max-width: 46vw; /* never wider than half screen on portrait phones */
         }
-        #statsPanel .stat-line { margin: 3px 0; font-weight: 500; }
+        #statsPanel .stat-line  { margin: 3px 0; font-weight: 500; }
         #statsPanel .stat-label { color: #aaa; font-weight: 400; }
         #statsPanel .stat-value { color: #fff; font-weight: 600; }
-        #statsPanel .monster-level { color: #ffcc00; }
-        #statsPanel .attack-ready { color: #66ff99; }
-        #statsPanel .attack-cooldown { color: #ffcc00; }
-        /* ── Help button — top-right of canvas area ── */
+        #statsPanel .monster-level  { color: #ffcc00; }
+        #statsPanel .attack-ready   { color: #66ff99; }
+        #statsPanel .attack-cooldown{ color: #ffcc00; }
+
+        /* Help button */
         #helpButton {
-            top: 8px;
-            right: 8px;
-            width: 36px;
-            height: 36px;
+            top: 8px; right: 248px;
+            width: 36px; height: 36px;
             font-size: 20px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            cursor: pointer;
-            font-weight: bold;
-            padding: 0;
-            width: 36px; /* override generic button rule */
+            background: #4CAF50; color: white;
+            border: none; border-radius: 50%;
+            cursor: pointer; font-weight: bold; padding: 0;
         }
         #helpButton:hover { background: #45a049; }
-        /* ── Action buttons row — just below help button ── */
+
+        /* Rankings button */
         #rankingsButton {
-            top: 52px;
-            right: 8px;
-            width: auto;
-            min-width: 120px;
-            height: 36px;
-            padding: 0 12px;
-            font-size: 13px;
+            top: 52px; right: 248px;
+            width: auto; min-width: 120px; height: 36px;
+            padding: 0 12px; font-size: 13px;
             background: linear-gradient(135deg, #7c5cd8 0%, #6344c0 100%);
-            color: white;
-            border: 2px solid #5b3fa8;
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: bold;
+            color: white; border: 2px solid #5b3fa8;
+            border-radius: 20px; cursor: pointer; font-weight: bold;
             box-shadow: 0 3px 5px rgba(0,0,0,0.3);
             text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
+            display: inline-flex; align-items: center; justify-content: center;
         }
-        #rankingsButton:hover {
-            background: linear-gradient(135deg, #6344c0 0%, #4e35a8 100%);
-        }
+        #rankingsButton:hover { background: linear-gradient(135deg, #6344c0 0%, #4e35a8 100%); }
+
+        /* PvP button */
         #pvpButton {
-            top: 96px;
-            right: 8px;
-            width: auto;
-            min-width: 120px;
-            height: 36px;
-            padding: 0 12px;
-            font-size: 13px;
+            top: 96px; right: 248px;
+            width: auto; min-width: 120px; height: 36px;
+            padding: 0 12px; font-size: 13px;
             background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
-            color: white;
-            border: 2px solid #ff4757;
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: bold;
+            color: white; border: 2px solid #ff4757;
+            border-radius: 20px; cursor: pointer; font-weight: bold;
             box-shadow: 0 3px 5px rgba(0,0,0,0.3);
         }
-        #pvpButton:hover {
-            background: linear-gradient(135deg, #ff5252 0%, #e84a5f 100%);
-        }
-        #pvpButton:active {
-            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-        }
-        /* ── Controls panel — bottom drawer on mobile, right panel on desktop ── */
+        #pvpButton:hover  { background: linear-gradient(135deg, #ff5252 0%, #e84a5f 100%); }
+        #pvpButton:active { box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+
+        /* Mobile menu button — hidden on desktop */
+        #mobileMenuBtn { display: none; }
+
+        /* Controls panel — right side on desktop */
         #controls {
-            background: rgba(0, 0, 0, 0.85);
+            top: 8px; right: 8px;
+            width: 230px;
+            max-height: calc(100vh - 16px);
+            border-radius: 8px;
+            background: rgba(0,0,0,0.85);
             padding: 12px;
-            border-radius: 8px 8px 0 0;
             color: #fff;
-            /* Mobile: full-width drawer anchored to bottom */
-            bottom: 0;
-            left: 0;
-            right: 0;
-            max-height: 38vh;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
         }
-        /* On wider screens restore the right-side floating panel */
-        @media (min-width: 600px) {
-            #controls {
-                top: 8px;
-                right: 8px;
-                bottom: auto;
-                left: auto;
-                width: 230px;
-                max-height: calc(100vh - 16px);
-                border-radius: 8px;
-            }
-            #rankingsButton { right: 248px; top: 52px; }
-            #pvpButton      { right: 248px; top: 96px; }
-            #helpButton     { right: 248px; top: 8px;  }
-        }
-        /* Generic button base (applies inside #controls) */
+
+        /* Generic button inside controls */
         #controls button {
-            width: 100%;
-            padding: 8px;
-            margin: 4px 0;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 13px;
+            width: 100%; padding: 8px; margin: 4px 0;
+            background: #4CAF50; color: white;
+            border: none; border-radius: 3px;
+            cursor: pointer; font-size: 13px;
         }
-        #controls button:hover { background: #45a049; }
-        #controls button:disabled { background: #666; cursor: not-allowed; }
-        /* Two-column grid for buttons on wider phones (landscape) */
-        @media (min-width: 400px) and (max-width: 599px) {
-            .section .btn-grid {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 4px;
-            }
-        }
+        #controls button:hover     { background: #45a049; }
+        #controls button:disabled  { background: #666; cursor: not-allowed; }
+
         .section {
-            margin: 10px 0;
-            padding: 8px;
+            margin: 10px 0; padding: 8px;
             background: rgba(255,255,255,0.1);
             border-radius: 3px;
         }
         .section h3 { margin: 0 0 8px 0; font-size: 14px; }
-        .skill-btn { background: #2196F3 !important; }
-        .skill-btn:hover { background: #0b7dda !important; }
-        .skill-btn:disabled { background: #666 !important; cursor: not-allowed; }
+
+        /* Two-column grid always shown on desktop */
+        .section .btn-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+        }
+
+        .skill-btn          { background: #2196F3 !important; }
+        .skill-btn:hover    { background: #0b7dda !important; }
+        .skill-btn:disabled { background: #666   !important; cursor: not-allowed; }
+
+        /* ════════════════════════════════════════════════
+           MOBILE LAYOUT  (< 600 px)
+           • Stats → slim top bar (one row of icon+value chips)
+           • Action buttons + help → inside collapsible drawer
+           • Controls drawer → collapsed by default, toggle via ☰ button
+           • Nothing floats over the game area by default
+        ════════════════════════════════════════════════ */
+        @media (max-width: 599px) {
+
+            /* ── Top stats bar ── */
+            #statsPanel {
+                top: 0; left: 0; right: 0;
+                width: 100%;
+                border-radius: 0;
+                padding: 5px 8px;
+                font-size: 11px;
+                line-height: 1;
+                /* horizontal chip row */
+                display: flex;
+                flex-wrap: wrap;
+                gap: 4px 10px;
+                align-items: center;
+                background: rgba(0,0,0,0.82);
+            }
+            /* Hide verbose labels; keep only value chips */
+            #statsPanel .stat-line  { margin: 0; }
+            #statsPanel .stat-label { display: none; }
+            #statsPanel .stat-value { font-size: 11px; font-weight: 700; }
+            /* Each chip shows a small emoji label + value inline */
+            #statsPanel .stat-line::before {
+                color: #aaa;
+                font-size: 10px;
+                margin-right: 2px;
+            }
+            #chip-health::before    { content: '❤️ '; }
+            #chip-gold::before      { content: '🪙 '; }
+            #chip-sp::before        { content: '⬆️ '; }
+            #chip-atk::before       { content: '⚔️ '; }
+            #chip-lvl::before       { content: '👾 '; }
+            #chip-kd::before        { content: '🏆 '; }
+
+            /* Hide all floating action buttons — they live in the drawer on mobile */
+            #helpButton, #rankingsButton, #pvpButton { display: none; }
+
+            /* ── Mobile menu toggle button ── */
+            #mobileMenuBtn {
+                display: flex;
+                align-items: center; justify-content: center;
+                bottom: 0; right: 0;
+                width: 52px; height: 52px;
+                background: rgba(0,0,0,0.85);
+                border: 1px solid rgba(255,255,255,0.15);
+                border-radius: 12px 0 0 0;
+                font-size: 22px;
+                color: #fff;
+                cursor: pointer;
+                z-index: 200;
+            }
+
+            /* ── Bottom drawer ── */
+            #controls {
+                /* Reset desktop positioning */
+                top: auto; right: 0; left: 0;
+                bottom: 0;
+                width: 100%;
+                border-radius: 12px 12px 0 0;
+                padding: 0;
+                max-height: 0;
+                overflow: hidden;
+                transition: max-height 0.3s ease;
+            }
+            #controls.open {
+                max-height: 60vh;
+                overflow-y: auto;
+                padding: 12px 12px 60px; /* bottom pad clears the toggle button */
+            }
+
+            /* ── Action buttons inside the drawer ── */
+            .mobile-actions {
+                display: flex;
+                gap: 8px;
+                margin-bottom: 10px;
+            }
+            .mobile-actions a,
+            .mobile-actions button {
+                flex: 1;
+                height: 38px;
+                font-size: 12px;
+                font-weight: 700;
+                border-radius: 8px;
+                border: none;
+                cursor: pointer;
+                color: #fff;
+                text-decoration: none;
+                display: flex; align-items: center; justify-content: center;
+                gap: 4px;
+            }
+            .mob-pvp      { background: linear-gradient(135deg, #ff6b6b, #ee5a6f); border: 2px solid #ff4757 !important; }
+            .mob-rankings { background: linear-gradient(135deg, #7c5cd8, #6344c0); border: 2px solid #5b3fa8 !important; }
+            .mob-help     { background: #4CAF50; width: 38px !important; flex: none !important; border-radius: 50% !important; }
+
+            /* Compact button grid in drawer */
+            .section .btn-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 4px;
+            }
+            #controls button { font-size: 12px; padding: 7px 4px; }
+        }
+
+        /* ── Help modal (shared) ── */
         #helpModal {
             display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 2000;
-            overflow-y: auto;
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 2000; overflow-y: auto;
         }
         #helpModalContent {
             background: white;
-            margin: 50px auto;
-            padding: 30px;
-            max-width: 800px;
-            border-radius: 10px;
-            position: relative;
-            color: #333;
+            margin: 50px auto; padding: 30px;
+            max-width: 800px; border-radius: 10px;
+            position: relative; color: #333;
         }
-        #helpModalContent h1 {
-            margin-top: 0;
-            color: #4CAF50;
-        }
-        #helpModalContent h2 {
-            color: #2196F3;
-            margin-top: 20px;
-            border-bottom: 2px solid #2196F3;
-            padding-bottom: 5px;
-        }
-        #helpModalContent h3 {
-            color: #555;
-            margin-top: 15px;
-        }
-        #helpModalContent ul {
-            line-height: 1.6;
-        }
-        #helpModalContent li {
-            margin: 8px 0;
-        }
-        #helpModalContent strong {
-            color: #000;
-        }
+        #helpModalContent h1 { margin-top: 0; color: #4CAF50; }
+        #helpModalContent h2 { color: #2196F3; margin-top: 20px; border-bottom: 2px solid #2196F3; padding-bottom: 5px; }
+        #helpModalContent h3 { color: #555; margin-top: 15px; }
+        #helpModalContent ul { line-height: 1.6; }
+        #helpModalContent li { margin: 8px 0; }
+        #helpModalContent strong { color: #000; }
         .closeButton {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            font-size: 32px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: #666;
-            width: auto;
-            padding: 0 10px;
+            position: absolute; top: 10px; right: 10px;
+            font-size: 32px; background: none; border: none;
+            cursor: pointer; color: #666; width: auto; padding: 0 10px;
         }
-        .closeButton:hover {
-            color: #000;
-            background: none;
-        }
-        #statsPanel {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.85);
-            padding: 20px;
-            border-radius: 8px;
-            color: #fff;
-            min-width: 300px;
-            font-size: 18px;
-            line-height: 1.6;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
-            z-index: 100;
-        }
-        #statsPanel .stat-line {
-            margin: 8px 0;
-            font-weight: 500;
-        }
-        #statsPanel .stat-label {
-            color: #aaa;
-            font-weight: 400;
-        }
-        #statsPanel .stat-value {
-            color: #fff;
-            font-weight: 600;
-        }
-        #statsPanel .monster-level {
-            color: #ffcc00;
-        }
-        #statsPanel .attack-ready {
-            color: #66ff99;
-        }
-        #statsPanel .attack-cooldown {
-            color: #ffcc00;
-        }
+        .closeButton:hover { color: #000; background: none; }
     </style>
 </head>
 <body>
     <canvas id="gameCanvas"></canvas>
-    
-    <!-- Stats Panel -->
+
+    <!-- ── Stats panel ──
+         Desktop: top-left block with labels.
+         Mobile: slim top bar — labels hidden, chip IDs used for ::before emoji labels. -->
     <div id="statsPanel">
-        <div class="stat-line"><span class="stat-label">Health:</span> <span class="stat-value" id="stat-health">0 / 100</span></div>
-        <div class="stat-line"><span class="stat-label">Gold:</span> <span class="stat-value" id="stat-gold">0</span></div>
-        <div class="stat-line"><span class="stat-label">Power-Up Points:</span> <span class="stat-value" id="stat-skillpoints">0</span></div>
-        <div class="stat-line"><span class="stat-label">Attack Power:</span> <span class="stat-value" id="stat-attack">0</span></div>
-        <div class="stat-line monster-level"><span class="stat-label">Monster Level:</span> <span class="stat-value" id="stat-monster-level">1</span></div>
-        <div class="stat-line"><span class="stat-label">PvP K/D:</span> <span class="stat-value" id="stat-pvp-kd">0/0</span></div>
+        <div class="stat-line" id="chip-health"><span class="stat-label">Health: </span><span class="stat-value" id="stat-health">0 / 100</span></div>
+        <div class="stat-line" id="chip-gold"><span class="stat-label">Gold: </span><span class="stat-value" id="stat-gold">0</span></div>
+        <div class="stat-line" id="chip-sp"><span class="stat-label">PuP: </span><span class="stat-value" id="stat-skillpoints">0</span></div>
+        <div class="stat-line" id="chip-atk"><span class="stat-label">ATK: </span><span class="stat-value" id="stat-attack">0</span></div>
+        <div class="stat-line monster-level" id="chip-lvl"><span class="stat-label">Lvl: </span><span class="stat-value" id="stat-monster-level">1</span></div>
+        <div class="stat-line" id="chip-kd"><span class="stat-label">K/D: </span><span class="stat-value" id="stat-pvp-kd">0/0</span></div>
     </div>
-    
+
+    <!-- Desktop action buttons (hidden on mobile, shown in drawer instead) -->
     <button id="helpButton" onclick="toggleHelpModal()" title="Game Guide & FAQ">?</button>
     <a id="rankingsButton" href="rankings.html" target="_blank" rel="noopener" title="View weekly PvP leaderboards">🏆 Rankings</a>
     <button id="pvpButton" onclick="enterPvPArena()" title="Enter PvP Arena - Battle other players!">⚔️ Enter PvP Arena</button>
 
+    <!-- Mobile-only: drawer toggle button (bottom-right corner) -->
+    <button id="mobileMenuBtn" onclick="toggleMobileMenu()" aria-label="Open menu">☰</button>
+
     <div id="controls">
+        <!-- Mobile-only action button row at the top of the drawer -->
+        <div class="mobile-actions">
+            <button class="mob-pvp" onclick="closeMobileMenu(); enterPvPArena();">⚔️ PvP</button>
+            <a class="mob-rankings" href="rankings.html" target="_blank" rel="noopener" onclick="closeMobileMenu()">🏆 Rankings</a>
+            <button class="mob-help" onclick="closeMobileMenu(); toggleHelpModal();">?</button>
+        </div>
+
         <h2>Idle Clicker</h2>
         
         <div class="section">
@@ -672,6 +688,20 @@
             } else {
                 modal.style.display = 'none';
             }
+        }
+
+        // Mobile drawer toggle
+        function toggleMobileMenu() {
+            var controls = document.getElementById('controls');
+            var btn = document.getElementById('mobileMenuBtn');
+            var isOpen = controls.classList.toggle('open');
+            btn.textContent = isOpen ? '✕' : '☰';
+        }
+        function closeMobileMenu() {
+            var controls = document.getElementById('controls');
+            var btn = document.getElementById('mobileMenuBtn');
+            controls.classList.remove('open');
+            btn.textContent = '☰';
         }
         
         // PvP Arena entry — request a server room switch then navigate to play.html
